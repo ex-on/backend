@@ -1,6 +1,4 @@
 from django.db import models
-from users.models import User
-from excercise.models import Exce
 # Create your models here.
 class Excercise(models.Model):
     name = models.CharField(max_length=15)
@@ -23,7 +21,7 @@ class ExcerciseDetails(models.Model):
 
 
 class ExcercisePlanAerobic(models.Model):
-    user = models.ForeignKey('User', models.DO_NOTHING)
+    user = models.ForeignKey('users.User', models.DO_NOTHING)
     excercise = models.ForeignKey(Excercise, models.DO_NOTHING)
     date = models.DateField()
     target_distance = models.FloatField()
@@ -35,7 +33,7 @@ class ExcercisePlanAerobic(models.Model):
 
 
 class ExcercisePlanWeight(models.Model):
-    user = models.ForeignKey('User', models.DO_NOTHING)
+    user = models.ForeignKey('users.User', models.DO_NOTHING)
     excercise = models.ForeignKey(Excercise, models.DO_NOTHING)
     date = models.DateField()
     num_sets = models.IntegerField(blank=True, null=True)

@@ -1,8 +1,7 @@
 from django.db import models
-
 # Create your models here.
 class Post(models.Model):
-    user = models.ForeignKey('User', models.DO_NOTHING)
+    user = models.ForeignKey('users.User', models.DO_NOTHING)
     creation_date = models.DateTimeField()
     title = models.CharField(max_length=30)
     content = models.CharField(max_length=500)
@@ -14,7 +13,7 @@ class Post(models.Model):
 
 
 class PostComment(models.Model):
-    user = models.ForeignKey('User', models.DO_NOTHING)
+    user = models.ForeignKey('users.User', models.DO_NOTHING)
     post = models.ForeignKey(Post, models.DO_NOTHING)
     content = models.CharField(max_length=100)
     creation_date = models.DateTimeField()
@@ -35,7 +34,7 @@ class PostCommentCount(models.Model):
 
 
 class PostCommentReply(models.Model):
-    user = models.ForeignKey('User', models.DO_NOTHING)
+    user = models.ForeignKey('users.User', models.DO_NOTHING)
     post_comment = models.ForeignKey(PostComment, models.DO_NOTHING)
     content = models.CharField(max_length=100)
     creation_date = models.DateTimeField()
@@ -68,7 +67,7 @@ class PostCount(models.Model):
 
 
 class QnaPost(models.Model):
-    user = models.ForeignKey('User', models.DO_NOTHING)
+    user = models.ForeignKey('users.User', models.DO_NOTHING)
     title = models.CharField(max_length=30)
     content = models.CharField(max_length=500)
     creation_date = models.DateTimeField()
@@ -82,7 +81,7 @@ class QnaPost(models.Model):
 
 
 class QnaPostAnswer(models.Model):
-    user = models.ForeignKey('User', models.DO_NOTHING)
+    user = models.ForeignKey('users.User', models.DO_NOTHING)
     qna_post = models.ForeignKey(QnaPost, models.DO_NOTHING)
     content = models.CharField(max_length=500)
     creation_date = models.DateTimeField()
@@ -94,7 +93,7 @@ class QnaPostAnswer(models.Model):
 
 class QnaPostAnswerComment(models.Model):
     qna_post_answer = models.ForeignKey(QnaPostAnswer, models.DO_NOTHING)
-    user = models.ForeignKey('User', models.DO_NOTHING)
+    user = models.ForeignKey('users.User', models.DO_NOTHING)
     content = models.CharField(max_length=100)
 
     class Meta:
@@ -104,7 +103,7 @@ class QnaPostAnswerComment(models.Model):
 
 class QnaPostAnswerCommentReply(models.Model):
     qna_post_answer_comment = models.ForeignKey(QnaPostAnswerComment, models.DO_NOTHING)
-    user = models.ForeignKey('User', models.DO_NOTHING)
+    user = models.ForeignKey('users.User', models.DO_NOTHING)
     content = models.CharField(max_length=100)
 
     class Meta:
