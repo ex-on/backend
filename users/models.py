@@ -1,5 +1,4 @@
 from django.db import models
-from community.models import Post, QnaPost
 # Create your models here.
 class User(models.Model):
     password = models.CharField(max_length=30)
@@ -52,7 +51,7 @@ class UserPhysicalData(models.Model):
 
 class UsersLikedPosts(models.Model):
     user = models.ForeignKey(User, models.DO_NOTHING)
-    post = models.ForeignKey(Post, models.DO_NOTHING, blank=True, null=True)
+    post = models.ForeignKey('community.Post', models.DO_NOTHING, blank=True, null=True)
 
     class Meta:
         managed = False
@@ -61,7 +60,7 @@ class UsersLikedPosts(models.Model):
 
 class UsersLikedQnaPosts(models.Model):
     user = models.ForeignKey(User, models.DO_NOTHING)
-    qna_post = models.ForeignKey(QnaPost, models.DO_NOTHING, blank=True, null=True)
+    qna_post = models.ForeignKey('community.QnaPost', models.DO_NOTHING, blank=True, null=True)
 
     class Meta:
         managed = False
@@ -70,7 +69,7 @@ class UsersLikedQnaPosts(models.Model):
 
 class UsersSavedPosts(models.Model):
     user = models.ForeignKey(User, models.DO_NOTHING)
-    post = models.ForeignKey(Post, models.DO_NOTHING)
+    post = models.ForeignKey('community.Post', models.DO_NOTHING)
 
     class Meta:
         managed = False
@@ -79,7 +78,7 @@ class UsersSavedPosts(models.Model):
 
 class UsersSavedQnaPosts(models.Model):
     user = models.ForeignKey(User, models.DO_NOTHING)
-    qna_post = models.ForeignKey(QnaPost, models.DO_NOTHING, blank=True, null=True)
+    qna_post = models.ForeignKey('community.QnaPost', models.DO_NOTHING, blank=True, null=True)
 
     class Meta:
         managed = False
