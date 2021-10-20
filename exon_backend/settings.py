@@ -38,7 +38,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'users',
-    'excercise',
+    'exercise',
     'community',
     'rest_framework',
 ]
@@ -83,6 +83,7 @@ DATABASES = {
         'NAME': 'Exon',
         'USER': 'aschung',
         'PASSWORD': 'Unicorntnsgh01!',
+        'HOST': 'exon.ccpgkvutfljg.ap-northeast-2.rds.amazonaws.com',
         'OPTIONS': {
             'init_command': 'SET sql_mode="STRICT_TRANS_TABLES"' 
         },
