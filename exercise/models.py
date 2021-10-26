@@ -45,7 +45,7 @@ class ExercisePlanWeight(models.Model):
         db_table = 'exercise_plan_weight'
 
 
-class ExcercisePlanWeightSet(models.Model):
+class ExercisePlanWeightSet(models.Model):
     exercise_plan_weight = models.ForeignKey(
         ExercisePlanWeight, models.DO_NOTHING)
     set_num = models.IntegerField()

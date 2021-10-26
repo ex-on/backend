@@ -1,7 +1,9 @@
+from django.http.response import HttpResponse
 from django.shortcuts import render
 from rest_framework.response import Response
 from rest_framework.decorators import api_view
 import datetime
+import json
 from .models import *
 from .serializers import ExerciseDetailsSerializer, ExercisePlanWeightSerializer, ExerciseRecordWeightSerializer, ExerciseSerializer, TodayExerciseTimeSerializer, UserAllExerciseRecordWeightSerializer, UserExercisePlanWeightSerializer, UserExercisePlanWeightSetSerializer, UserExercisePlanWeightSetsSerializer, UserExerciseRecordWeightSerializer, UserExerciseRecordWeightSetsSerializer
 # Create your views here.
@@ -49,7 +51,7 @@ def getUserExercisePlanWeight(request):
 @api_view(['GET'])
 def getUserExercisePlanWeightSets(request):
     planId = request.GET('exercise_plan_weight_id')
-    plan_sets = ExcercisePlanWeightSet.objects.filter(exercise_plan_weight = planId)
+    plan_sets = ExercisePlanWeightSet.objects.filter(exercise_plan_weight = planId)
     serializer = UserExercisePlanWeightSetsSerializer(plan_sets, many = True)
     return Response(serializer.data)
 
@@ -75,3 +77,15 @@ def getUserExerciseRecordWeightSets(request):
     record_sets = ExerciseRecordWeightSet.objects.filter(exercise_record_weight = record_id)
     serializer = UserExerciseRecordWeightSetsSerializer(record_sets, many = True)
     return Response(serializer.data)
+
+@api_view(['POST'])
+def postUserExercisePlanWeight(request):
+    request = json.loads(request.body)
+    plan = ExercisePlanWeight(user = request['user'], exercise = request['exercise'], date = request['date'], set_num = request['set_num'])
+    plan.save()
+
+    sets = request['sets']
+    for set in sets:
+        data = ExercisePlanWeightSet(exercise_plan_weight = set[''], set_num = set['set_num'], target_weight = set['target_weight'], target_reps = set['target_reps'])
+        data.save()
+    return HttpResponse(status = 200)
