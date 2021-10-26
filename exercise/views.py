@@ -3,7 +3,7 @@ from rest_framework.response import Response
 from rest_framework.decorators import api_view
 import datetime
 from .models import *
-from .serializers import ExerciseDetailsSerializer, ExercisePlanWeightSerializer, ExerciseRecordWeightSerializer, ExerciseSerializer, TodayExerciseTimeSerializer
+from .serializers import ExerciseDetailsSerializer, ExercisePlanWeightSerializer, ExerciseRecordWeightSerializer, ExerciseSerializer, TodayExerciseTimeSerializer, UserAllExerciseRecordWeightSerializer, UserExercisePlanWeightSerializer, UserExercisePlanWeightSetSerializer, UserExercisePlanWeightSetsSerializer, UserExerciseRecordWeightSerializer, UserExerciseRecordWeightSetsSerializer
 # Create your views here.
 
 
@@ -39,25 +39,39 @@ def getExerciseDetails(request):
     return Response(serializer.data)
 
 @api_view(['GET'])
-def getExercisePlanWeight(request):
+def getUserExercisePlanWeight(request):
     userId = request.GET('user_id')
     exerciseId = request.GET('exercise_id')
     plan = ExercisePlanWeight.objects.filter(user = userId, exercise = exerciseId)
-    serializer = ExercisePlanWeightSerializer(plan, many = True)
+    serializer = UserExercisePlanWeightSerializer(plan, many = True)
     return Response(serializer.data)
 
 @api_view(['GET'])
-def getExerciseRecordWeight(request):
+def getUserExercisePlanWeightSets(request):
+    planId = request.GET('exercise_plan_weight_id')
+    plan_sets = ExcercisePlanWeightSet.objects.filter(exercise_plan_weight = planId)
+    serializer = UserExercisePlanWeightSetsSerializer(plan_sets, many = True)
+    return Response(serializer.data)
+
+@api_view(['GET'])
+def getUserAllExerciseRecordWeight(request):
     userId = request.GET('user_id')
     record = ExerciseRecordWeight.objects.filter(user = userId)
-    serializer = ExerciseRecordWeightSerializer(record, many = True)
+    serializer = UserExerciseRecordWeightSerializer(record, many = True)
     return Response(serializer.data)
 
 @api_view(['GET'])
-def getExerciseRecordWeightDate(request):
+def getUserExerciseRecordWeight(request):
     userId = request.GET('user_id')
     date = request.GET('date')
     parsedDate = datetime.datetime.strptime(date, '%m/%d/%Y')
     record = ExerciseRecordWeight(user = userId, date = parsedDate)
-    serializer = ExerciseRecordWeightSerializer(record, many = True)
+    serializer = UserExerciseRecordWeightSerializer(record, many = True)
+    return Response(serializer.data)
+
+@api_view(['GET'])
+def getUserExerciseRecordWeightSets(request):
+    record_id = request.GET('exercise_record_weight_id')
+    record_sets = ExerciseRecordWeightSet.objects.filter(exercise_record_weight = record_id)
+    serializer = UserExerciseRecordWeightSetsSerializer(record_sets, many = True)
     return Response(serializer.data)
