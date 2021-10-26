@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import getExercise, getExerciseDetails,  getTodayExerciseTime, getUserAllExerciseRecordWeight, getUserExercisePlanWeight, getUserExercisePlanWeightSets, getUserExerciseRecordWeight, getUserExerciseRecordWeightSets
+from .views import getExercise, getExerciseDetails,  getTodayExerciseTime, getUserAllExerciseRecordWeight, getUserExercisePlanWeight, getUserExercisePlanWeightSets, getUserExerciseRecordWeight, getUserExerciseRecordWeightSets, postUserExercisePlanWeight
 
 
 urlpatterns = [
@@ -11,4 +11,5 @@ urlpatterns = [
     path('record_weight', getUserAllExerciseRecordWeight), #user_id
     path('record_weight_date', getUserExerciseRecordWeight), #user_id & date
     path('record_weight_sets', getUserExerciseRecordWeightSets), #exercise_record_weight_id
+    path('test', postUserExercisePlanWeight),
 ]
