@@ -1,6 +1,6 @@
 from django.db.models import fields
 from rest_framework import serializers
-from .models import ExcercisePlanWeightSet, Exercise, ExerciseDetails, ExercisePlanWeight, ExerciseRecordWeight, ExerciseRecordWeightSet
+from .models import ExercisePlanWeightSet, Exercise, ExerciseDetails, ExercisePlanWeight, ExerciseRecordWeight, ExerciseRecordWeightSet
 
 
 class ExerciseSerializer(serializers.ModelSerializer):
@@ -28,14 +28,14 @@ class UserExercisePlanWeightSerializer(serializers.ModelSerializer):
 class UserExercisePlanWeightSetsSerializer(serializers.ModelSerializer):
 
     class Meta:
-        model = ExcercisePlanWeightSet
+        model = ExercisePlanWeightSet
         fields = ('exercise_plan_weight', 'set_num', 'target_weight', 'target_reps')
 
 class UserExerciseRecordWeightSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = ExerciseRecordWeight
-        fields = ('user', 'exercise_pla_weight_id', 'total_sets', 'date', 'start_time', 'end_time')
+        fields = ('user', 'exercise_plan_weight_id', 'total_sets', 'date', 'start_time', 'end_time')
 
 class UserExerciseRecordWeightSetsSerializer(serializers.ModelSerializer):
 

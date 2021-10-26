@@ -5,7 +5,7 @@ from rest_framework.decorators import api_view
 import datetime
 import json
 from .models import *
-from .serializers import ExerciseDetailsSerializer, ExercisePlanWeightSerializer, ExerciseRecordWeightSerializer, ExerciseSerializer, TodayExerciseTimeSerializer, UserAllExerciseRecordWeightSerializer, UserExercisePlanWeightSerializer, UserExercisePlanWeightSetSerializer, UserExercisePlanWeightSetsSerializer, UserExerciseRecordWeightSerializer, UserExerciseRecordWeightSetsSerializer
+from .serializers import ExerciseDetailsSerializer, ExerciseSerializer, TodayExerciseTimeSerializer, UserExercisePlanWeightSerializer,  UserExercisePlanWeightSetsSerializer, UserExerciseRecordWeightSerializer, UserExerciseRecordWeightSetsSerializer
 # Create your views here.
 
 
@@ -81,11 +81,12 @@ def getUserExerciseRecordWeightSets(request):
 @api_view(['POST'])
 def postUserExercisePlanWeight(request):
     request = json.loads(request.body)
-    plan = ExercisePlanWeight(user = request['user'], exercise = request['exercise'], date = request['date'], set_num = request['set_num'])
+    plan = ExercisePlanWeight(user = request['user'], exercise = request['exercise'], date = request['date'], num_sets = request['num_sets'])
     plan.save()
 
     sets = request['sets']
-    for set in sets:
-        data = ExercisePlanWeightSet(exercise_plan_weight = set[''], set_num = set['set_num'], target_weight = set['target_weight'], target_reps = set['target_reps'])
-        data.save()
+    print(sets)
+    #for set in sets:
+    #    data = ExercisePlanWeightSet(exercise_plan_weight = set[''], set_num = set['set_num'], target_weight = set['target_weight'], target_reps = set['target_reps'])
+    #    data.save()
     return HttpResponse(status = 200)
