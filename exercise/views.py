@@ -3,7 +3,7 @@ from rest_framework.response import Response
 from rest_framework.decorators import api_view
 import datetime
 from .models import *
-from .serializers import ExerciseSerializer, TodayExerciseTimeSerializer
+from .serializers import ExerciseDetailsSerializer, ExercisePlanWeightSerializer, ExerciseRecordWeightSerializer, ExerciseSerializer, TodayExerciseTimeSerializer
 # Create your views here.
 
 
@@ -29,4 +29,35 @@ def getTodayExerciseTime(request):
         diff = record.end_time - record.start_time
         duration += diff
     serializer = TodayExerciseTimeSerializer(duration)
+    return Response(serializer.data)
+
+@api_view(['GET'])
+def getExerciseDetails(request):
+    exercise_id = request.GET['exercise_id']
+    details = ExerciseDetails.objects.filter(exercise = exercise_id)
+    serializer = ExerciseDetailsSerializer(details)
+    return Response(serializer.data)
+
+@api_view(['GET'])
+def getExercisePlanWeight(request):
+    userId = request.GET('user_id')
+    exerciseId = request.GET('exercise_id')
+    plan = ExercisePlanWeight.objects.filter(user = userId, exercise = exerciseId)
+    serializer = ExercisePlanWeightSerializer(plan, many = True)
+    return Response(serializer.data)
+
+@api_view(['GET'])
+def getExerciseRecordWeight(request):
+    userId = request.GET('user_id')
+    record = ExerciseRecordWeight.objects.filter(user = userId)
+    serializer = ExerciseRecordWeightSerializer(record, many = True)
+    return Response(serializer.data)
+
+@api_view(['GET'])
+def getExerciseRecordWeightDate(request):
+    userId = request.GET('user_id')
+    date = request.GET('date')
+    parsedDate = datetime.datetime.strptime(date, '%m/%d/%Y')
+    record = ExerciseRecordWeight(user = userId, date = parsedDate)
+    serializer = ExerciseRecordWeightSerializer(record, many = True)
     return Response(serializer.data)
