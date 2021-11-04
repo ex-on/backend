@@ -13,7 +13,14 @@ class Post(models.Model):
         managed = True
         db_table = 'post'
 
+class PostPreview(models.Model):
+    user = models.ForeignKey('users.User', models.DO_NOTHING)
+    title = models.CharField(max_length = 30)
+    creation_date = models.DateTimeField()
 
+    class Meta:
+        managed = False
+        db_table = 'post_preview'
 class PostComment(models.Model):
     user = models.ForeignKey('users.User', models.DO_NOTHING)
     post = models.ForeignKey(Post, models.DO_NOTHING)
@@ -58,6 +65,7 @@ class PostCommentReplyCount(models.Model):
 
 class PostCount(models.Model):
     post = models.ForeignKey(Post, models.DO_NOTHING)
+    preview = models.OneToOneField(PostPreview)
     count_likes = models.IntegerField()
     count_comments = models.IntegerField()
     count_saved = models.IntegerField()
