@@ -5,7 +5,8 @@ from rest_framework.decorators import api_view
 import datetime
 import json
 from .models import *
-from .serializers import ExerciseDetailsSerializer, ExerciseSerializer, TodayExerciseTimeSerializer, UserExercisePlanWeightSerializer,  UserExercisePlanWeightSetsSerializer, UserExerciseRecordWeightSerializer, UserExerciseRecordWeightSetsSerializer
+from .serializers import ExerciseDetailsSerializer, ExercisePlanWeightSerializer, ExerciseSerializer, TodayExerciseTimeSerializer, UserExercisePlanWeightSerializer,  UserExercisePlanWeightSetsSerializer, UserExerciseRecordWeightSerializer, UserExerciseRecordWeightSetsSerializer
+from users.models import User
 # Create your views here.
 
 
@@ -81,12 +82,20 @@ def getUserExerciseRecordWeightSets(request):
 @api_view(['POST'])
 def postUserExercisePlanWeight(request):
     request = json.loads(request.body)
-    plan = ExercisePlanWeight(user = request['user'], exercise = request['exercise'], date = request['date'], num_sets = request['num_sets'])
+    plan = ExercisePlanWeight(user = request['user_id'], exercise = request['exercise_id'], date = request['date'], num_sets = request['num_sets'])
     plan.save()
 
     sets = request['sets']
-    print(sets)
-    #for set in sets:
-    #    data = ExercisePlanWeightSet(exercise_plan_weight = set[''], set_num = set['set_num'], target_weight = set['target_weight'], target_reps = set['target_reps'])
-    #    data.save()
+
+    for set in sets:
+        data = ExercisePlanWeightSet(exercise_plan_weight_id = plan.id, set_num = set['set_num'], target_weight = set['target_weight'], target_reps = set['target_reps'])
+        data.save()
     return HttpResponse(status = 200)
+
+@api_view(['GET'])
+def getExercisePlanWeight(request):
+    exercisePlanWeightId = request.GET('exercise_plan_weight_id')
+    setNum = request.GET('set_num')
+    plan = ExercisePlanWeightSet.objects.filter(exercise_plan_weight_id = exercisePlanWeightId, set_num = setNum)
+    serializer = ExercisePlanWeightSerializer(plan)
+    return Response(serializer.data)

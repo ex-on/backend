@@ -42,3 +42,9 @@ class UserExerciseRecordWeightSetsSerializer(serializers.ModelSerializer):
     class Meta:
         model = ExerciseRecordWeightSet
         fields = ('exercise_record_weight', 'record_weight', 'record_reps', 'start_time', 'end_time', 'set_num')
+
+class ExercisePlanWeightSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = ExercisePlanWeightSet
+        fields = ('exercise_plan_weight', 'set_num', 'target_weight', 'target_reps')
