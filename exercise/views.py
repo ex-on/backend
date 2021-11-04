@@ -4,6 +4,8 @@ from rest_framework.response import Response
 from rest_framework.decorators import api_view
 import datetime
 import json
+
+from rest_framework.serializers import Serializer
 from .models import *
 from .serializers import ExerciseDetailsSerializer, ExercisePlanWeightSerializer, ExerciseSerializer, TodayExerciseTimeSerializer, UserExercisePlanWeightSerializer,  UserExercisePlanWeightSetsSerializer, UserExerciseRecordWeightSerializer, UserExerciseRecordWeightSetsSerializer
 from users.models import User
@@ -108,8 +110,19 @@ def postUserExerciseRecordWeight(request):
 
     sets = request['sets']
     for set in sets:
-        data = ExerciseRecordWeightSet(exercise_record_weight = record.id, record_weight = set['record_weight'], 
+        data = ExerciseRecordWeightSet(exercise_record_weight_id = record.id, record_weight = set['record_weight'], 
                                        record_reps = set['record_reps'], start_time = set['start_time'], 
                                        end_time = set['end_time'], set_num = set['set_num'])
         data.save()
     return HttpResponse(status = 200)
+
+@api_view(['GET'])
+def getUserRecentRecordWeight(request):
+    userId = request.GET(['user_id'])
+    exerciseId = request.GET(['exercise_id'])
+    record = ExerciseRecordWeight.objects.filter(user = userId, exercise = exerciseId)
+    record = record.order_by('-end_time')
+    recordId = record.head.id
+    data = ExerciseRecordWeightSet.objects.filter(exercise_record_weight = recordId)
+    serializer = UserExerciseRecordWeightSetsSerializer(data)
+    return Response(serializer.data)
