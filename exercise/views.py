@@ -91,7 +91,7 @@ def getUserExerciseRecordWeightSets(request):
 @api_view(['POST'])
 def postUserExercisePlanWeight(request):
     request = json.loads(request.body)
-    plan = ExercisePlanWeight(user = request['user_id'], exercise = request['exercise_id'], date = request['date'], num_sets = request['num_sets'])
+    plan = ExercisePlanWeight(user_id = request['user_id'], exercise_id = request['exercise_id'], date = request['date'], num_sets = request['num_sets'])
     plan.save()
     
     sets = request['sets']
@@ -103,7 +103,21 @@ def postUserExercisePlanWeight(request):
 @api_view(['GET'])
 def getExercisePlanWeight(request):
     exercisePlanWeightId = request.GET('exercise_plan_weight_id')
-    setNum = request.GET('set_num')
-    plan = ExercisePlanWeightSet.objects.filter(exercise_plan_weight_id = exercisePlanWeightId, set_num = setNum)
+    plan = ExercisePlanWeightSet.objects.filter(exercise_plan_weight_id = exercisePlanWeightId)
     serializer = ExercisePlanWeightSerializer(plan)
     return Response(serializer.data)
+
+@api_view(['POST'])
+def postUserExerciseRecordWeight(request):
+    request = json.loads(request.body)
+    record = ExerciseRecordWeight(user_id = request['user_id'], exercise_plan_weight_id = request['exercise_plan_weight_id'], 
+                                  total_sets = request['total_sets'], start_time = request['start_time'], end_time = request['end_time'])
+    record.save()
+
+    sets = request['sets']
+    for set in sets:
+        data = ExerciseRecordWeightSet(exercise_record_weight = record.id, record_weight = set['record_weight'], 
+                                       record_reps = set['record_reps'], start_time = set['start_time'], 
+                                       end_time = set['end_time'], set_num = set['set_num'])
+        data.save()
+    return HttpResponse(status = 200)

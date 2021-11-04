@@ -1,5 +1,5 @@
 from django.urls import path, include
-from .views import getExercise, getExerciseDetails, getExercisePlanWeight,  getTodayExerciseTime, getUserAllExerciseRecordWeight, getUserExercisePlanWeight, getUserExercisePlanWeightSets, getUserExerciseRecordWeight, getUserExerciseRecordWeightSets, postUserExercisePlanWeight
+from .views import getExercise, getExerciseDetails, getExercisePlanWeight,  getTodayExerciseTime, getUserAllExerciseRecordWeight, getUserExercisePlanWeight, getUserExercisePlanWeightSets, getUserExerciseRecordWeight, getUserExerciseRecordWeightSets, postUserExercisePlanWeight, postUserExerciseRecordWeight
 
 urlpatterns = [
     path("list", getExercise), #target_muscle & exercise_method
@@ -10,6 +10,7 @@ urlpatterns = [
     path('record_weight', getUserAllExerciseRecordWeight), #user_id
     path('record_weight_date', getUserExerciseRecordWeight), #user_id & date
     path('record_weight_sets', getUserExerciseRecordWeightSets), #exercise_record_weight_id
-    path('post_exercise_plan_weight', postUserExercisePlanWeight),
-    path('exercise_plan_weight', getExercisePlanWeight), #exercise_plan_weight_id & set_num
+    path('post_exercise_plan_weight', postUserExercisePlanWeight), #user_id & exercise_id & date & num_sets & sets
+    path('exercise_plan_weight', getExercisePlanWeight), #exercise_plan_weight_id
+    path('post_exercise_record_weight', postUserExerciseRecordWeight),
 ]
