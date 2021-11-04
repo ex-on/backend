@@ -85,7 +85,7 @@ class ExerciseRecordAerobicRest(models.Model):
 
 class ExerciseRecordWeight(models.Model):
     user = models.ForeignKey('users.User', models.DO_NOTHING)
-    exercise_plan_weight_id = models.IntegerField()
+    exercise_plan_weight = models.ForeignKey(ExercisePlanWeight, models.DO_NOTHING)
     total_sets = models.IntegerField()
     date = models.DateField()
     start_time = models.DateTimeField()
