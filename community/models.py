@@ -1,4 +1,6 @@
 from django.db import models
+from django.db.models.deletion import DO_NOTHING
+
 # Create your models here.
 
 
@@ -15,12 +17,14 @@ class Post(models.Model):
 
 class PostPreview(models.Model):
     user = models.ForeignKey('users.User', models.DO_NOTHING)
+    post = models.ForeignKey('Post', models.DO_NOTHING)
     title = models.CharField(max_length = 30)
     creation_date = models.DateTimeField()
 
     class Meta:
         managed = False
         db_table = 'post_preview'
+
 class PostComment(models.Model):
     user = models.ForeignKey('users.User', models.DO_NOTHING)
     post = models.ForeignKey(Post, models.DO_NOTHING)
@@ -82,13 +86,22 @@ class QnaPost(models.Model):
     content = models.CharField(max_length=500)
     creation_date = models.DateTimeField()
     modified = models.IntegerField()
-    solved = models.IntegerField()
-    type = models.IntegerField()
-
+    solved = models.BooleanField()
     class Meta:
         managed = True
         db_table = 'qna_post'
 
+class QnaPreview(models.Model):
+    user = models.ForeignKey('users.User', models.DO_NOTHING)
+    post = models.ForeignKey('QnaPost', models.DO_NOTHING)
+    title = models.CharField(max_length = 30)
+    creation_date = models.DateTimeField()
+    solved = models.BooleanField()
+    type = models.IntegerField()
+    
+    class Meta:
+        managed = False
+        db_table = 'qna_preview'
 
 class QnaPostAnswer(models.Model):
     user = models.ForeignKey('users.User', models.DO_NOTHING)
