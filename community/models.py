@@ -1,5 +1,5 @@
 from django.db import models
-from django.db.models.deletion import DO_NOTHING
+from django.db.models.deletion import CASCADE, DO_NOTHING
 
 # Create your models here.
 
@@ -9,7 +9,7 @@ class Post(models.Model):
     creation_date = models.DateTimeField()
     title = models.CharField(max_length=30)
     content = models.CharField(max_length=500)
-    modified = models.IntegerField()
+    modified = models.BooleanField()
 
     class Meta:
         managed = True
@@ -38,7 +38,7 @@ class PostCommentCount(models.Model):
 
 class PostCommentReply(models.Model):
     user = models.ForeignKey('users.User', models.DO_NOTHING)
-    post = models.ForeignKey('users.User', models.DO_NOTHING)
+    post = models.ForeignKey(Post, models.DO_NOTHING)
     post_comment = models.ForeignKey(PostComment, models.DO_NOTHING)
     content = models.CharField(max_length=100)
     creation_date = models.DateTimeField()
@@ -60,7 +60,7 @@ class PostPreview(models.Model):
 
 class PostCount(models.Model):
     post = models.ForeignKey(Post, models.DO_NOTHING)
-    preview = models.OneToOneField(PostPreview)
+    preview = models.OneToOneField(PostPreview, on_delete = CASCADE)
     count_likes = models.IntegerField()
     count_comments = models.IntegerField()
     count_saved = models.IntegerField()
@@ -90,10 +90,10 @@ class PostCommentReplyCount(models.Model):
 
 class Qna(models.Model):
     user = models.ForeignKey('users.User', models.DO_NOTHING)
-    title = models.CharField(max_length=30)
-    content = models.CharField()
+    title = models.CharField(max_length = 30)
+    content = models.CharField(max_length = 500)
     creation_date = models.DateTimeField()
-    modified = models.IntegerField()
+    modified = models.BooleanField()
     solved = models.BooleanField()
     type = models.IntegerField()
     class Meta:

@@ -2,7 +2,7 @@ from django.db import models
 from django.db.models import fields
 from rest_framework import serializers
 
-from community.models import Post, PostComment, PostCommentReply, PostPreview, Qna, QnaAnswer, QnaAnswerComment, QnaAnswerCommentReply, QnaPost, QnaPostAnswer, QnaPreview
+from community.models import Post, PostComment, PostCommentReply, PostPreview, Qna, QnaAnswer, QnaAnswerComment, QnaAnswerCommentReply, QnaPreview
 
 class PostSerializer(serializers.ModelSerializer):
 

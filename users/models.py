@@ -111,8 +111,7 @@ class UsersLikedPosts(models.Model):
 
 class UsersLikedQnaPosts(models.Model):
     user = models.ForeignKey(User, models.DO_NOTHING)
-    qna_post = models.ForeignKey(
-        'community.QnaPost', models.DO_NOTHING, blank=True, null=True)
+    qna_post = models.ForeignKey('community.Qna', models.DO_NOTHING, blank=True, null=True)
 
     class Meta:
         managed = True
@@ -130,8 +129,7 @@ class UsersSavedPosts(models.Model):
 
 class UsersSavedQnaPosts(models.Model):
     user = models.ForeignKey(User, models.DO_NOTHING)
-    qna_post = models.ForeignKey(
-        'community.QnaPost', models.DO_NOTHING, blank=True, null=True)
+    qna_post = models.ForeignKey('community.Qna', models.DO_NOTHING, blank=True, null=True)
 
     class Meta:
         managed = True
