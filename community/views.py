@@ -7,13 +7,13 @@ from collections import namedtuple
 import datetime
 import json
 
-from community.serializers import PostCommentReplyFinalSerializer, PostCommentReplySerializer, PostPreviewSerializer, PostReplySerializer, PostSerializer, QnaAnswerCommentReplyFinalSerializer, QnaAnswerFinalSerializer, QnaPostSerializer, QnaPreviewSerializer, QnaSerializer
+from community.serializers import PostCommentReplyFinalSerializer, PostCommentReplySerializer, PostPreviewSerializer, PostSerializer, QnaAnswerCommentReplyFinalSerializer, QnaAnswerFinalSerializer, QnaPreviewSerializer, QnaSerializer
 from .models import *
 from users.models import User
 
 # Create your views here.
 PostCommentReply_namedtuple = namedtuple('PostCommentReply_namedtuple', ('post', 'comment','reply'))
-class PostCommentReplyViewSet(viewsets.Viewset):
+class PostCommentReplyViewSet(viewsets.ViewSet):
     @api_view(['GET'])
     def list(self, request):
         postid = request.GET('post_id')
@@ -28,8 +28,10 @@ class PostCommentReplyViewSet(viewsets.Viewset):
 @api_view(['POST'])
 def postPost(request):
     request = json.loads(request.body)
-    post = Post(user = request['user_id'], creation_date = request['creation_date'], title = request['title'], content = request['content'], modified = False)
+    post = Post(user_id = request['user_id'], creation_date = request['creation_date'], title = request['title'], content = request['content'], modified = False)
     post.save()
+    #postpreview = PostPreview(user_id = request['user_id'], post_id = post.id, creation_date = request['creation_date'], title = request['title'])
+    #postpreview.save()
     return HttpResponse(status = 200)
 
 @api_view(['GET'])
@@ -61,7 +63,7 @@ class QnaAnswerViewset(viewsets.ViewSet):
         serializer = QnaAnswerFinalSerializer(qnaanswer)
         return Response(serializer.data)
     
-QnaAnswerCommentReply_namedtuple = namedtuple('QnaAnswerCommentReply_namedtuple', 'comment', 'reply')
+QnaAnswerCommentReply_namedtuple = namedtuple('QnaAnswerCommentReply_namedtuple', ('comment', 'reply'))
 class QnaAnswerCommentReplyViewset(viewsets.ViewSet):
     @api_view(['GET'])
     def list(self, request):
@@ -76,7 +78,7 @@ class QnaAnswerCommentReplyViewset(viewsets.ViewSet):
 @api_view(['POST'])
 def postQna(request):
     request = json.loads(request.body)
-    qna = Qna(user = request['user'], title = request['title'], content = request['content'], creation_date = ['creation_date'], modified = False, solved = False, type = request['type'])
+    qna = Qna(user_id = request['user_id'], title = request['title'], content = request['content'], creation_date = request['creation_date'], modified = False, solved = False, type = request['type'])
     qna.save()
     return HttpResponse(status = 200)
 
