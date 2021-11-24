@@ -2,7 +2,7 @@ from django.db import models
 from django.db.models import fields
 from rest_framework import serializers
 
-from community.models import Post, PostComment, PostCommentReply, PostPreview, Qna, QnaAnswer, QnaAnswerComment, QnaAnswerCommentReply, QnaPreview
+from community.models import Post, PostComment, PostCommentReply, PostCount, Qna, QnaAnswer, QnaAnswerComment, QnaAnswerCommentReply, QnaPreview
 
 class PostSerializer(serializers.ModelSerializer):
 
@@ -25,10 +25,18 @@ class PostCommentReplyFinalSerializer(serializers.Serializer):
     comment = PostCommentSerializer(many = True)
     reply = PostCommentReplySerializer(many = True)
     
-class PostPreviewSerializer(serializers.ModelSerializer):
+class PostCountSerializer(serializers.ModelSerializer):
     class Meta:
-        model = PostPreview
+        model = PostCount
+        fields = ('count_likes', 'count_comments', 'count_saved')
+class PostSimpleSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Post
         fields = ('user', 'title', 'creation_date')
+
+class PostPreviewSerializer(serializers.Serializer):
+    post = PostSimpleSerializer
+    count = PostCountSerializer
 
 class QnaSerializer(serializers.ModelSerializer):
     class Meta:

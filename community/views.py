@@ -16,7 +16,7 @@ PostCommentReply_namedtuple = namedtuple('PostCommentReply_namedtuple', ('post',
 class PostCommentReplyViewSet(viewsets.ViewSet):
     @api_view(['GET'])
     def list(self, request):
-        postid = request.GET('post_id')
+        postid = request.GET['post_id']
         postcommentreply = PostCommentReply_namedtuple(
             post = Post.objects.filter(id = postid),
             comment = PostComment.objects.filter(post_id = postid),
@@ -28,34 +28,39 @@ class PostCommentReplyViewSet(viewsets.ViewSet):
 @api_view(['POST'])
 def postPost(request):
     request = json.loads(request.body)
-    post = Post(user_id = request['user_id'], creation_date = request['creation_date'], title = request['title'], content = request['content'], modified = False)
-    post.save()
-    #postpreview = PostPreview(user_id = request['user_id'], post_id = post.id, creation_date = request['creation_date'], title = request['title'])
-    #postpreview.save()
+    post_instance = Post(user_id = request['user_id'], creation_date = request['creation_date'], title = request['title'], content = request['content'], modified = False)
+    post_instance.save()
+    PostCount.objects.create(post = post_instance, count_likes = 0, count_comments = 0, count_saved = 0, count_reports = 0)
     return HttpResponse(status = 200)
 
-@api_view(['GET'])
-def getMain(request):
-    preview = PostPreview.objects.all().order_by('-creation_date')
-    index = (request.GET(['page_num']) - 1) * 10
-    preview = preview[index : index + 10]
-    serializer = PostPreviewSerializer(preview)
-    return Response(serializer.data)
+PostPreview = namedtuple('PostPreview', ('post', 'count'))
+class PostPreviewViewSet(viewsets.ViewSet):
+    @api_view(['GET'])
+    def list(self, request):
+        index = (int(request.GET['page_num']) - 1) * 10
+        preview = PostPreview(
+            preview = Post.objects.order_by('-id')[index:index + 10],
+            count = PostCount.objects.order_by('-id')[index:index + 10]
+        )
+        serializer = PostPreviewSerializer(preview)
+        return Response(serializer.data)
 
-@api_view(['GET'])
-def getHotBoard(request):
-    preview = PostPreview.objects.filter(PostCount.count_likes > 10)
-    preview = preview.order_by('-creation_date')
-    index = (request.GET(['page_num']) - 1) * 10
-    preview = preview[index : index + 10]
-    serializer = PostPreviewSerializer(preview)
-    return Response(serializer.data)
+class HotBoardPreviewViewSet(viewsets.ViewSet):
+    @api_view(['GET'])
+    def list(request):
+        index = (request.GET['page_num'] - 1) * 10
+        preview = PostPreview(
+            post = Post.objects.filter(PostCount.count_likes >= 10).order_by('-id')[index:index + 10],
+            count = PostCount.objects.filter(count_likes__gt = 9).order_by('-id')[index:index + 10]
+        )
+        serializer = PostPreviewSerializer(preview)
+        return Response(serializer.data)
 
 QnaAnswer_namedtuple = namedtuple('QnaAnswer_namedtuple', ('qna', 'answer'))
 class QnaAnswerViewset(viewsets.ViewSet):
     @api_view(['GET'])
     def list(self, request):
-        qnaId = request.GET('qna_id')
+        qnaId = request.GET['qna_id']
         qnaanswer = QnaAnswer_namedtuple(
             qna = Qna.objects.filter(id = qnaId),
             answer = QnaAnswer.objects.filter(qna_id = qnaId)
@@ -67,7 +72,7 @@ QnaAnswerCommentReply_namedtuple = namedtuple('QnaAnswerCommentReply_namedtuple'
 class QnaAnswerCommentReplyViewset(viewsets.ViewSet):
     @api_view(['GET'])
     def list(self, request):
-        qna_answer_id = request.GET(['qna_answer_id'])
+        qna_answer_id = request.GET['qna_answer_id']
         qnaanswercommentreply = QnaAnswerCommentReply_namedtuple(
             comment = QnaAnswerComment.objects.filter(qna_answer = qna_answer_id),
             reply = QnaAnswerCommentReply.objects.filter(qna_answer = qna_answer_id)
@@ -85,7 +90,7 @@ def postQna(request):
 @api_view(['GET'])
 def getQnaMain(request):
     preview = QnaPreview.objects.all().order_by('-creation_date')
-    index = (request.GET(['page_num']) - 1) * 10
+    index = (request.GET['page_num'] - 1) * 10
     preview = preview[index : index + 10]
     serializer = QnaPreviewSerializer(preview)
     return Response(serializer.data)
@@ -93,7 +98,7 @@ def getQnaMain(request):
 @api_view(['GET'])
 def getQnaMainSolved(request):
     preview = QnaPreview.objects.filter(solved = True)
-    index = (request.GET(['page_num']) - 1) * 10
+    index = (request.GET['page_num'] - 1) * 10
     preview = preview[index : index + 10]
     serializer = QnaPreviewSerializer(preview)
     return Response(serializer.data)
@@ -101,16 +106,16 @@ def getQnaMainSolved(request):
 @api_view(['GET'])
 def getQnaMainUnsolved(request):
     preview = QnaPreview.objects.filter(solved = False)
-    index = (request.GET(['page_num']) - 1) * 10
+    index = (request.GET['page_num'] - 1) * 10
     preview = preview[index : index + 10]
     serializer = QnaPreviewSerializer(preview)
     return Response(serializer.data)
 
 @api_view(['GET'])
 def getQnaMainType(request):
-    _type = request.GET(['type'])
+    _type = request.GET['type']
     preview = QnaPreview.objects.filter(type = _type)
-    index = (request.GET(['page_num']) - 1) * 10
+    index = (request.GET['page_num'] - 1) * 10
     preview = preview[index : index + 10]
     serializer = QnaPreviewSerializer(preview)
     return Response(serializer.data)

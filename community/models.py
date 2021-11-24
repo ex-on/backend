@@ -47,24 +47,12 @@ class PostCommentReply(models.Model):
         managed = True
         db_table = 'post_comment_reply'
 
-class PostPreview(models.Model):
-    user = models.ForeignKey('users.User', models.DO_NOTHING)
-    post = models.ForeignKey('Post', models.DO_NOTHING)
-    title = models.CharField(max_length = 30)
-    creation_date = models.DateTimeField()
-
-    class Meta:
-        managed = True
-        managed = False
-        db_table = 'post_preview'
-
 class PostCount(models.Model):
-    post = models.ForeignKey(Post, models.DO_NOTHING)
-    preview = models.OneToOneField(PostPreview, on_delete = CASCADE)
+    post = models.OneToOneField(Post, on_delete = CASCADE)
     count_likes = models.IntegerField()
     count_comments = models.IntegerField()
     count_saved = models.IntegerField()
-    count_reports = models.IntegerField(blank=True, null=True)
+    count_reports = models.IntegerField(blank = True, null = True)
 
     class Meta:
         managed = True
