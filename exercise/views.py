@@ -28,9 +28,12 @@ def getTodayExerciseTime(request):
     userId = request.GET['user_id']
     duration = datetime.timedelta
     parsedDate = datetime.datetime.strptime(date, '%m/%d/%Y')
-    exerciseRecords = ExerciseRecordAerobic.objects.filter(date=parsedDate, user_id=userId).extend(
-        ExerciseRecordWeight.objects.filter(date=parsedDate, user_id=userId))
-    for record in exerciseRecords:
+    aerobic_record = ExerciseRecordAerobic.objects.filter(date = parsedDate, user_id = userId)
+    weight_record = ExerciseRecordWeight.objects.filter(date = parsedDate, user_id = userId)
+    for record in aerobic_record:
+        diff = record.end_time - record.start_time
+        duration += diff
+    for record in weight_record:
         diff = record.end_time - record.start_time
         duration += diff
     serializer = TodayExerciseTimeSerializer(duration)
