@@ -82,7 +82,7 @@ DATABASES = {
         'ENGINE': 'django.db.backends.mysql',
         'NAME': 'Exon',
         'USER': 'aschung',
-        'PASSWORD': 'Unicorntnsgh01!',
+        'PASSWORD': 'Unicornexon21!',
         'HOST': 'exon.ccpgkvutfljg.ap-northeast-2.rds.amazonaws.com',
         'OPTIONS': {
             'init_command': 'SET sql_mode="STRICT_TRANS_TABLES"' 
