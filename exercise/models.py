@@ -10,6 +10,7 @@ class Exercise(models.Model):
     class Meta:
         managed = False
         db_table = 'exercise'
+
 class ExerciseDetails(models.Model):
     exercise = models.ForeignKey(Exercise, models.DO_NOTHING)
     recommended_duration = models.IntegerField()
@@ -27,6 +28,7 @@ class ExercisePlanWeight(models.Model):
     class Meta:
         managed = False
         db_table = 'exercise_plan_weight'
+
 class ExercisePlanWeightSets(models.Model):
     exercise_plan_weight = models.ForeignKey(
         ExercisePlanWeight, models.DO_NOTHING)
@@ -36,6 +38,7 @@ class ExercisePlanWeightSets(models.Model):
     class Meta:
         managed = False
         db_table = 'exercise_plan_weight_set'
+
 class ExercisePlanAerobic(models.Model):
     user = models.ForeignKey('users.User', models.DO_NOTHING)
     exercise = models.ForeignKey(Exercise, models.DO_NOTHING)
@@ -59,6 +62,7 @@ class ExerciseRecordWeight(models.Model):
     class Meta:
         managed = False
         db_table = 'exercise_record_weight'
+
 class ExerciseRecordWeightSet(models.Model):
     exercise_record_weight = models.ForeignKey(
         ExerciseRecordWeight, models.DO_NOTHING)
@@ -66,21 +70,24 @@ class ExerciseRecordWeightSet(models.Model):
     record_reps = models.IntegerField()
     start_time = models.DateTimeField()
     end_time = models.DateTimeField()
-    set_num = models.IntegerField(blank=True, null=True)
+    set_num = models.IntegerField(blank = True, null = True)
     class Meta:
         managed = False
         db_table = 'exercise_record_weight_set'
+
 class ExerciseRecordAerobic(models.Model):
     user = models.ForeignKey('users.User', models.DO_NOTHING)
+    exercise = models.ForeignKey(Exercise, models.DO_NOTHING)
     exercise_plan_aerobic = models.ForeignKey(ExercisePlanAerobic, models.DO_NOTHING)
     record_distance = models.FloatField()
-    record_duration = models.FloatField()
+    record_duration = models.TimeField()
     date = models.DateField()
     start_time = models.DateTimeField()
     end_time = models.DateTimeField(blank = True, null = True)
     class Meta:
         managed = False
         db_table = 'exercise_record_aerobic'
+
 class ExerciseRecordAerobicRest(models.Model):
     exercise_record_aerobic = models.ForeignKey(
         ExerciseRecordAerobic, models.DO_NOTHING)

@@ -6,10 +6,8 @@ from rest_framework.decorators import api_view
 import datetime
 import json
 
-from rest_framework.serializers import Serializer
 from .models import *
-from .serializers import ExerciseDetailsSerializer, ExercisePlanAerobicSerializer, ExercisePlanWeightSerializer, ExerciseRecordAerobicSerializer, ExerciseRecordWeightSerializer, ExerciseSerializer, TodayExerciseTimeSerializer, UserExercisePlanWeightSerializer,  UserExercisePlanWeightSetsSerializer, UserExerciseRecordWeightSerializer, UserExerciseRecordWeightSetsSerializer
-from users.models import User
+from .serializers import ExerciseDetailsSerializer, ExercisePlanAerobicSerializer, ExercisePlanWeightSerializer, ExercisePlanWeightSetsSerializer, ExerciseRecordAerobicSerializer, ExerciseRecordWeightSerializer, ExerciseSerializer, ExerciseTimeSerializer, UserExerciseRecordWeightSetsSerializer
 # Create your views here.
 
 ########### 운동 종류 및 세부 정보 조회 #############################
@@ -57,14 +55,14 @@ def getUserPlanWeightDate(request):
     _date = request.GET['date']
     _date = datetime.datetime.strptime(_date, '%Y/%m/%d')
     plans = ExercisePlanWeight.objects.filter(user_id = _user_id, date = _date)
-    serializer = UserExercisePlanWeightSerializer(plans)
+    serializer = ExercisePlanWeightSerializer(plans, many = True)
     return Response(serializer.data)
 
 @api_view(['GET'])
 def getUserPlanWeightSets(request):
     _exercise_plan_weight_id = request.GET['exercise_plan_weight_id']
     sets = ExercisePlanWeightSets.objects.filter(exercise_plan_weight_id = _exercise_plan_weight_id)
-    serializer = UserExercisePlanWeightSetsSerializer(sets)
+    serializer = ExercisePlanWeightSetsSerializer(sets, many = True)
     return Response(serializer.data)
 
 @api_view(['GET'])
@@ -73,7 +71,7 @@ def getUserPlanAerobicDate(request):
     _date = request.GET['date']
     _date = datetime.datetime.strptime(_date, '%Y/%m/%d')
     plans = ExercisePlanAerobic.objects.filter(user_id = _user_id, date = _date)
-    serializer = ExercisePlanAerobicSerializer(plans)
+    serializer = ExercisePlanAerobicSerializer(plans, many = True)
     return Response(serializer.data)
 
 ########### 운동 기록 조회 #############################
@@ -81,7 +79,7 @@ def getUserPlanAerobicDate(request):
 @api_view(['GET'])
 def getUserRecordWeight(request):
     _user_id = request.GET['user_id']
-    record = ExerciseRecordWeight.objects.filter(user_id = _user_id)
+    record = ExerciseRecordWeight.objects.filter(user_id = _user_id).order_by('-date')
     serializer = ExerciseRecordWeightSerializer(record, many = True)
     return Response(serializer.data)
 
@@ -96,9 +94,9 @@ def getUserRecordWeightDate(request):
 
 @api_view(['GET'])
 def getUserRecordWeightTargetMuscle(request):
-    _user_id = request.GET('user_id')
-    _target_muscle = request.GET('target_muscle')
-    record = ExerciseRecordWeight.objects.filter(user_id = _user_id, target_muscle = _target_muscle)
+    _user_id = request.GET['user_id']
+    _target_muscle = request.GET['target_muscle']
+    record = ExerciseRecordWeight.objects.filter(user_id = _user_id, target_muscle = _target_muscle).order_by('-date')
     serializer = ExerciseRecordWeightSerializer(record, many = True)
     return Response(serializer.data)
 
@@ -117,7 +115,7 @@ def getUserRecordAerobic(request):
     return Response(serializer.data)
 
 @api_view(['GET'])
-def getUserRecordWeightDate(request):
+def getUserRecordAerobicDate(request):
     _user_id = request.GET['user_id']
     _date = request.GET['date']
     _date = datetime.datetime.strptime(_date, '%Y/%m/%d')
@@ -140,7 +138,7 @@ def getExerciseTime(request):
         diff = record.end_time - record.start_time
         duration = duration + diff
     duration = {'duration': duration}
-    serializer = TodayExerciseTimeSerializer(duration)
+    serializer = ExerciseTimeSerializer(duration)
     return Response(serializer.data)
 
 ########## 운동 계획 및 기록 등록 ###########
@@ -158,9 +156,17 @@ def postUserExercisePlanWeight(request):
     return HttpResponse(status = 200)
 
 @api_view(['POST'])
+def postUserExercisePlanAerobic(request):
+    request = json.loads(request.body)
+    record = ExercisePlanAerobic(user_id = request['user_id'], exercise_id = request['exercise_id'], date = request['date'], target_distance = request['target_distance'], target_duration = request['target_duration'])
+    record.save()
+    return HttpResponse(status = 200)
+
+@api_view(['POST'])
 def postUserExerciseRecordWeight(request):
     request = json.loads(request.body)
-    record = ExerciseRecordWeight(user_id = request['user_id'], exercise_plan_weight_id = request['exercise_plan_weight_id'], 
+    record = ExerciseRecordWeight(user_id = request['user_id'], exercise_plan_weight_id = request['exercise_plan_weight_id'],
+                                  date = request['date'], exercise_id = request['exercise_id'], target_muscle = request['target_muscle'], 
                                   total_sets = request['total_sets'], start_time = request['start_time'], end_time = request['end_time'])
     record.save()
 
@@ -170,4 +176,13 @@ def postUserExerciseRecordWeight(request):
                                        record_reps = set['record_reps'], start_time = set['start_time'], 
                                        end_time = set['end_time'], set_num = set['set_num'])
         data.save()
+    return HttpResponse(status = 200)
+
+@api_view(['POST'])
+def postUserExerciseRecordAerobic(request):
+    request = json.loads(request.body)
+    record = ExerciseRecordAerobic(user_id = request['user_id'], exercise_id = request['exercise_id'], exercise_plan_aerobic_id = request['exercise_plan_aerobic_id'], 
+                                   date = request['date'], record_distance = request['record_distance'], record_duration = request['record_duration'],
+                                   start_time = request['start_time'], end_time = request['end_time'])
+    record.save()
     return HttpResponse(status = 200)
