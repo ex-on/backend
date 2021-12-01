@@ -1,5 +1,7 @@
 from django.db import models
 # Create your models here.
+
+
 class Post(models.Model):
     user = models.ForeignKey('users.User', models.DO_NOTHING)
     creation_date = models.DateTimeField()
@@ -8,7 +10,7 @@ class Post(models.Model):
     modified = models.IntegerField()
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'post'
 
 
@@ -19,7 +21,7 @@ class PostComment(models.Model):
     creation_date = models.DateTimeField()
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'post_comment'
 
 
@@ -29,7 +31,7 @@ class PostCommentCount(models.Model):
     count_reports = models.IntegerField(blank=True, null=True)
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'post_comment_count'
 
 
@@ -40,7 +42,7 @@ class PostCommentReply(models.Model):
     creation_date = models.DateTimeField()
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'post_comment_reply'
 
 
@@ -50,7 +52,7 @@ class PostCommentReplyCount(models.Model):
     count_reports = models.IntegerField(blank=True, null=True)
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'post_comment_reply_count'
 
 
@@ -62,7 +64,7 @@ class PostCount(models.Model):
     count_reports = models.IntegerField(blank=True, null=True)
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'post_count'
 
 
@@ -76,7 +78,7 @@ class QnaPost(models.Model):
     type = models.IntegerField()
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'qna_post'
 
 
@@ -87,7 +89,7 @@ class QnaPostAnswer(models.Model):
     creation_date = models.DateTimeField()
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'qna_post_answer'
 
 
@@ -97,17 +99,18 @@ class QnaPostAnswerComment(models.Model):
     content = models.CharField(max_length=100)
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'qna_post_answer_comment'
 
 
 class QnaPostAnswerCommentReply(models.Model):
-    qna_post_answer_comment = models.ForeignKey(QnaPostAnswerComment, models.DO_NOTHING)
+    qna_post_answer_comment = models.ForeignKey(
+        QnaPostAnswerComment, models.DO_NOTHING)
     user = models.ForeignKey('users.User', models.DO_NOTHING)
     content = models.CharField(max_length=100)
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'qna_post_answer_comment_reply'
 
 
@@ -118,7 +121,7 @@ class QnaPostAnswerCount(models.Model):
     count_reports = models.IntegerField()
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'qna_post_answer_count'
 
 
@@ -131,5 +134,5 @@ class QnaPostCount(models.Model):
     count_reports = models.IntegerField()
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'qna_post_count'
