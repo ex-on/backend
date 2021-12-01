@@ -17,7 +17,7 @@ class Post(models.Model):
 
 class PostComment(models.Model):
     user = models.ForeignKey('users.User', models.DO_NOTHING)
-    post = models.ForeignKey(Post, models.DO_NOTHING)
+    post = models.ForeignKey(Post, on_delete = CASCADE)
     content = models.CharField(max_length=100)
     creation_date = models.DateTimeField()
 
@@ -49,6 +49,7 @@ class PostCommentReply(models.Model):
 
 class PostCount(models.Model):
     post = models.OneToOneField(Post, on_delete = CASCADE)
+    creation_date = models.DateTimeField()
     count_likes = models.IntegerField()
     count_comments = models.IntegerField()
     count_saved = models.IntegerField()
@@ -129,10 +130,11 @@ class QnaPreview(models.Model):
     
     class Meta:
         managed = True
-        db_table = 'qna_preview'
+        db_table = 'qna_post_preview'
 
 class QnaCount(models.Model):
     qna = models.ForeignKey(Qna, models.DO_NOTHING)
+    creation_date = models.DateTimeField()
     count_total_likes = models.IntegerField()
     count_answers = models.IntegerField()
     count_saved = models.IntegerField()
