@@ -28,7 +28,8 @@ COGNITO_USER_POOL = 'ap-northeast-2_EuYr8s0Rp'
 # Provide this value if `id_token` is used for authentication (it contains 'aud' claim).
 # `access_token` doesn't have it, in this case keep the COGNITO_AUDIENCE empty
 COGNITO_AUDIENCE = None
-COGNITO_POOL_URL = 'exon.auth.ap-northeast-2' # will be set few lines of code later, if configuration provided
+# will be set few lines of code later, if configuration provided
+COGNITO_POOL_URL = 'exon.auth.ap-northeast-2'
 
 SECRET_KEY = 'django-insecure-*4ob$(c+eyksy^ayz=#@7^1ga*m-eq7jb!%e8d94qe82%zw*g*'
 
@@ -42,7 +43,8 @@ rsa_keys = {}
 # On django init we download jwks public keys which are used to validate jwt tokens.
 # For now there is no rotation of keys (seems like in Cognito decided not to implement it)
 if COGNITO_AWS_REGION and COGNITO_USER_POOL:
-    COGNITO_POOL_URL = 'https://cognito-idp.{}.amazonaws.com/{}'.format(COGNITO_AWS_REGION, COGNITO_USER_POOL)
+    COGNITO_POOL_URL = 'https://cognito-idp.{}.amazonaws.com/{}'.format(
+        COGNITO_AWS_REGION, COGNITO_USER_POOL)
     pool_jwks_url = COGNITO_POOL_URL + '/.well-known/jwks.json'
     jwks = json.loads(request.urlopen(pool_jwks_url).read())
     rsa_keys = {key['kid']: json.dumps(key) for key in jwks['keys']}
