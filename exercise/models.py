@@ -8,7 +8,7 @@ class Exercise(models.Model):
     difficulty = models.IntegerField()
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'exercise'
 
 
@@ -18,7 +18,7 @@ class ExerciseDetails(models.Model):
     info_text = models.CharField(max_length=500)
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'exercise_details'
 
 
@@ -30,7 +30,7 @@ class ExercisePlanAerobic(models.Model):
     target_duration = models.TimeField()
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'exercise_plan_aerobic'
 
 
@@ -41,7 +41,7 @@ class ExercisePlanWeight(models.Model):
     num_sets = models.IntegerField(blank=True, null=True)
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'exercise_plan_weight'
 
 
@@ -53,7 +53,7 @@ class ExcercisePlanWeightSet(models.Model):
     target_reps = models.IntegerField()
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'exercise_plan_weight_set'
 
 
@@ -68,7 +68,7 @@ class ExerciseRecordAerobic(models.Model):
     end_time = models.DateTimeField(blank=True, null=True)
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'exercise_record_aerobic'
 
 
@@ -79,7 +79,7 @@ class ExerciseRecordAerobicRest(models.Model):
     end_time = models.IntegerField(blank=True, null=True)
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'exercise_record_aerobic_rest'
 
 
@@ -92,7 +92,7 @@ class ExerciseRecordWeight(models.Model):
     end_time = models.DateTimeField()
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'exercise_record_weight'
 
 
@@ -106,5 +106,5 @@ class ExerciseRecordWeightSet(models.Model):
     set_num = models.IntegerField(blank=True, null=True)
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'exercise_record_weight_set'
