@@ -1,5 +1,5 @@
 from django.db import models
-# Create your models here.
+# Create your models here
 
 class Exercise(models.Model):
     name = models.CharField(max_length=15)
@@ -45,7 +45,7 @@ class ExercisePlanWeight(models.Model):
         db_table = 'exercise_plan_weight'
 
 
-class ExcercisePlanWeightSet(models.Model):
+class ExercisePlanWeightSet(models.Model):
     exercise_plan_weight = models.ForeignKey(
         ExercisePlanWeight, models.DO_NOTHING)
     set_num = models.IntegerField()
@@ -85,7 +85,8 @@ class ExerciseRecordAerobicRest(models.Model):
 
 class ExerciseRecordWeight(models.Model):
     user = models.ForeignKey('users.User', models.DO_NOTHING)
-    exercise_plan_weight_id = models.IntegerField()
+    exercise = models.ForeignKey(Exercise, models.DO_NOTHING)
+    exercise_plan_weight = models.ForeignKey(ExercisePlanWeight, models.DO_NOTHING)
     total_sets = models.IntegerField()
     date = models.DateField()
     start_time = models.DateTimeField()

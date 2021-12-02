@@ -2,19 +2,8 @@ from django.db import models
 
 from django.contrib.auth.base_user import AbstractBaseUser
 from django.contrib.auth.models import PermissionsMixin, UserManager
-from django.contrib.auth.validators import UnicodeUsernameValidator
+from users.validators import UsernameValidator
 from core.models import AbstractBaseModel
-# Create your models here.
-# class User(models.Model):
-#     password = models.CharField(max_length=30)
-#     username = models.CharField(max_length=15)
-#     email = models.CharField(max_length=45)
-#     phone_number = models.CharField(max_length=11, blank=True, null=True)
-
-#     class Meta:
-#         managed = True
-#         db_table = 'user'
-
 
 class User(PermissionsMixin, AbstractBaseUser, AbstractBaseModel):
     """
@@ -29,14 +18,14 @@ class User(PermissionsMixin, AbstractBaseUser, AbstractBaseModel):
     They should work out of the box.
     The disadvantage is - cognito-users will have unused fields which always empty. Not critical.
     """
-    username_validator = UnicodeUsernameValidator()
+    username_validator = UsernameValidator()
 
     ### Common fields ###
     # For cognito-users username will contain `sub` claim from jwt token
     # (unique identifier (UUID) for the authenticated user).
     # For django-users it will contain username which will be used to login into django-admin site
     username = models.CharField(
-        'Username', max_length=255, unique=True, validators=[username_validator])
+        'Username', min_length=3, max_length=20, unique=True, validators=[username_validator])
     is_active = models.BooleanField('Active', default=True)
     ### Cognito-user related fields ###
     # some additional fields which will be filled-out only for users registered via Cognito
@@ -111,8 +100,7 @@ class UsersLikedPosts(models.Model):
 
 class UsersLikedQnaPosts(models.Model):
     user = models.ForeignKey(User, models.DO_NOTHING)
-    qna_post = models.ForeignKey(
-        'community.QnaPost', models.DO_NOTHING, blank=True, null=True)
+    qna_post = models.ForeignKey('community.Qna', models.DO_NOTHING, blank=True, null=True)
 
     class Meta:
         managed = True
@@ -130,8 +118,7 @@ class UsersSavedPosts(models.Model):
 
 class UsersSavedQnaPosts(models.Model):
     user = models.ForeignKey(User, models.DO_NOTHING)
-    qna_post = models.ForeignKey(
-        'community.QnaPost', models.DO_NOTHING, blank=True, null=True)
+    qna_post = models.ForeignKey('community.Qna', models.DO_NOTHING, blank=True, null=True)
 
     class Meta:
         managed = True
