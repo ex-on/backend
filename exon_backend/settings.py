@@ -51,7 +51,7 @@ if COGNITO_AWS_REGION and COGNITO_USER_POOL:
 
 
 JWT_AUTH = {
-    'JWT_PAYLOAD_GET_USERNAME_HANDLER': 'core.api.jwt.get_username_from_payload_handler',
+    'JWT_PAYLOAD_GET_USERNAME_HANDLER': 'core.utils.jwt.get_username_from_payload_handler',
     'JWT_DECODE_HANDLER': 'core.utils.jwt.cognito_jwt_decode_handler',
     'JWT_PUBLIC_KEY': rsa_keys,
     'JWT_ALGORITHM': 'RS256',
