@@ -83,7 +83,7 @@ class Qna(models.Model):
 
     class Meta:
         managed = True
-        db_table = 'qna_post'
+        db_table = 'post_qna'
 
 
 class QnaAnswer(models.Model):
@@ -94,7 +94,7 @@ class QnaAnswer(models.Model):
 
     class Meta:
         managed = True
-        db_table = 'qna_post_answer'
+        db_table = 'post_qna_answer'
 
 
 class QnaAnswerComment(models.Model):
@@ -105,7 +105,7 @@ class QnaAnswerComment(models.Model):
 
     class Meta:
         managed = True
-        db_table = 'qna_post_answer_comment'
+        db_table = 'post_qna_answer_comment'
 
 
 class QnaAnswerCommentReply(models.Model):
@@ -117,7 +117,7 @@ class QnaAnswerCommentReply(models.Model):
 
     class Meta:
         managed = True
-        db_table = 'qna_post_answer_comment_reply'
+        db_table = 'post_qna_answer_comment_reply'
 
 
 class QnaPreview(models.Model):
@@ -130,7 +130,7 @@ class QnaPreview(models.Model):
 
     class Meta:
         managed = True
-        db_table = 'qna_post_preview'
+        db_table = 'post_qna_preview'
 
 
 class QnaCount(models.Model):
@@ -144,7 +144,7 @@ class QnaCount(models.Model):
 
     class Meta:
         managed = True
-        db_table = 'qna_post_count'
+        db_table = 'post_qna_count'
 
 
 class QnaAnswerCount(models.Model):
@@ -155,4 +155,4 @@ class QnaAnswerCount(models.Model):
 
     class Meta:
         managed = True
-        db_table = 'qna_post_answer_count'
+        db_table = 'post_qna_answer_count'
