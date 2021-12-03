@@ -12,7 +12,6 @@ https://docs.djangoproject.com/en/3.2/ref/settings/
 
 from pathlib import Path
 import os
-
 import json
 from urllib import request
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -147,7 +146,7 @@ AUTH_PASSWORD_VALIDATORS = [
 AUTH_USER_MODEL = 'users.User'
 
 AUTHENTICATION_BACKENDS = [
-    'django.contrib.auth.backends.RemoteUserBackend',
+    'users.backends.CustomRemoteUserBackend',
     'django.contrib.auth.backends.ModelBackend',
 ]
 
@@ -156,7 +155,7 @@ REST_FRAMEWORK = {
         'core.api.permissions.DenyAny',
     ),
     'DEFAULT_AUTHENTICATION_CLASSES': (
-        'rest_framework_jwt.authentication.JSONWebTokenAuthentication',
+        'users.authentication.CustomJSONWebTokenAuthentication',
     ),
 }
 
