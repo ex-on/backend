@@ -12,7 +12,6 @@ https://docs.djangoproject.com/en/3.2/ref/settings/
 
 from pathlib import Path
 import os
-
 import json
 from urllib import request
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -51,8 +50,8 @@ if COGNITO_AWS_REGION and COGNITO_USER_POOL:
 
 
 JWT_AUTH = {
-    'JWT_PAYLOAD_GET_USERNAME_HANDLER': 'core.api.jwt.get_username_from_payload_handler',
-    'JWT_DECODE_HANDLER': 'core.api.jwt.cognito_jwt_decode_handler',
+    'JWT_PAYLOAD_GET_USERNAME_HANDLER': 'core.utils.jwt.get_username_from_payload_handler',
+    'JWT_DECODE_HANDLER': 'core.utils.jwt.cognito_jwt_decode_handler',
     'JWT_PUBLIC_KEY': rsa_keys,
     'JWT_ALGORITHM': 'RS256',
     'JWT_AUDIENCE': COGNITO_AUDIENCE,
@@ -147,7 +146,7 @@ AUTH_PASSWORD_VALIDATORS = [
 AUTH_USER_MODEL = 'users.User'
 
 AUTHENTICATION_BACKENDS = [
-    'django.contrib.auth.backends.RemoteUserBackend',
+    'users.backends.CustomRemoteUserBackend',
     'django.contrib.auth.backends.ModelBackend',
 ]
 
@@ -156,7 +155,7 @@ REST_FRAMEWORK = {
         'core.api.permissions.DenyAny',
     ),
     'DEFAULT_AUTHENTICATION_CLASSES': (
-        'rest_framework_jwt.authentication.JSONWebTokenAuthentication',
+        'users.authentication.CustomJSONWebTokenAuthentication',
     ),
 }
 

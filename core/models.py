@@ -10,6 +10,8 @@ class AbstractBaseModel(models.Model):
     created_at = models.DateTimeField('Created at', auto_now_add=True, null=True)
     updated_at = models.DateTimeField('Updated at', auto_now=True, null=True)
 
+    UUID_FIELD = 'uuid'
+
     class Meta:
       abstract = True
       
