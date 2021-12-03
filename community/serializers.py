@@ -68,10 +68,9 @@ class QnaCountSerializer(serializers.ModelSerializer):
 
 
 class QnaAnswerFinalSerializer(serializers.Serializer):
-    qna = QnaSerializer(many=True)
-    answer = QnaAnswerSerializer(many=True)
-
-
+    qna = QnaSerializer(many = True)
+    answer = QnaAnswerSerializer(many = True)
+    
 class QnaAnswerCommentSerializer(serializers.ModelSerializer):
     class Meta:
         model = QnaAnswerComment
@@ -90,5 +89,9 @@ class QnaAnswerCommentReplyFinalSerializer(serializers.Serializer):
 
 
 class QnaPreviewSerializer(serializers.Serializer):
-    qna = QnaSerializer(many=True)
-    count = QnaCountSerializer(many=True)
+    qna = QnaSerializer(many = True)
+    count = QnaCountSerializer(many = True)
+    
+class PostQnaSerializer(serializers.Serializer):
+    post = PostSerializer(many = True)
+    qna = QnaSerializer(many = True)
