@@ -3,9 +3,10 @@ from django.db import models
 from django.contrib.auth.base_user import AbstractBaseUser
 from django.contrib.auth.models import PermissionsMixin, UserManager
 from users.validators import UsernameValidator
-from core.models import AbstractBaseModel
+from core.models import AbstractBaseModel, AbstractBaseUserModel
 
-class User(PermissionsMixin, AbstractBaseUser, AbstractBaseModel):
+
+class User(PermissionsMixin, AbstractBaseUser, AbstractBaseUserModel):
     """
     Table contains cognito-users & django-users(admin).
     PermissionsMixin leverage built-in django model permissions system
@@ -30,7 +31,7 @@ class User(PermissionsMixin, AbstractBaseUser, AbstractBaseModel):
     ### Cognito-user related fields ###
     # some additional fields which will be filled-out only for users registered via Cognito
     phone_number = models.CharField(max_length=11, blank=True, null=True)
-    
+
     ### Django-user related fields ###
     # password is inherited from AbstractBaseUser
     # allow non-unique emails
@@ -66,10 +67,11 @@ class UserDetailsCount(models.Model):
 class UserDetailsStatic(models.Model):
     user = models.ForeignKey(User, models.DO_NOTHING)
     gender = models.IntegerField()
-    activity_level = models.IntegerField()
+    birth_date = models.DateField()
+    activity_level = models.IntegerField(default=0)
     physical_level = models.IntegerField(blank=True, null=True)
     intro_text = models.CharField(max_length=30, blank=True, null=True)
-    profile_icon = models.IntegerField()
+    profile_icon = models.IntegerField(default=0)
 
     class Meta:
         managed = True
@@ -78,10 +80,11 @@ class UserDetailsStatic(models.Model):
 
 class UserPhysicalData(models.Model):
     user = models.ForeignKey(User, models.DO_NOTHING)
-    date = models.DateField()
+    height = models.FloatField(blank = True, null = True)
     weight = models.FloatField(blank=True, null=True)
     muscle_mass = models.FloatField(blank=True, null=True)
     body_fat_percentage = models.FloatField(blank=True, null=True)
+    created_at = models.DateTimeField('Created at', auto_now_add=True, null=True)
 
     class Meta:
         managed = True
@@ -100,7 +103,8 @@ class UsersLikedPosts(models.Model):
 
 class UsersLikedQnaPosts(models.Model):
     user = models.ForeignKey(User, models.DO_NOTHING)
-    qna_post = models.ForeignKey('community.Qna', models.DO_NOTHING, blank=True, null=True)
+    qna_post = models.ForeignKey(
+        'community.Qna', models.DO_NOTHING, blank=True, null=True)
 
     class Meta:
         managed = True
@@ -118,7 +122,8 @@ class UsersSavedPosts(models.Model):
 
 class UsersSavedQnaPosts(models.Model):
     user = models.ForeignKey(User, models.DO_NOTHING)
-    qna_post = models.ForeignKey('community.Qna', models.DO_NOTHING, blank=True, null=True)
+    qna_post = models.ForeignKey(
+        'community.Qna', models.DO_NOTHING, blank=True, null=True)
 
     class Meta:
         managed = True
