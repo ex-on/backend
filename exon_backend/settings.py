@@ -28,7 +28,7 @@ COGNITO_USER_POOL = 'ap-northeast-2_EuYr8s0Rp'
 # `access_token` doesn't have it, in this case keep the COGNITO_AUDIENCE empty
 COGNITO_AUDIENCE = None
 # will be set few lines of code later, if configuration provided
-COGNITO_POOL_URL = 'exon.auth.ap-northeast-2'
+COGNITO_POOL_DOMAIN = 'exon'
 
 SECRET_KEY = 'django-insecure-*4ob$(c+eyksy^ayz=#@7^1ga*m-eq7jb!%e8d94qe82%zw*g*'
 

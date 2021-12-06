@@ -1,12 +1,16 @@
 from django.http.response import HttpResponse
-from django.shortcuts import render
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.decorators import api_view, authentication_classes, permission_classes
+from rest_framework.permissions import IsAuthenticated
+from exon_backend.settings import COGNITO_POOL_DOMAIN, COGNITO_AWS_REGION
 from .models import *
 import json
-
+import datetime
+import requests
 # Create your views here.
+
+
 @api_view(['GET'])
 @authentication_classes([])
 @permission_classes([])
@@ -15,12 +19,40 @@ def checkAvailableEmail(request):
     isEmailAvailable = not User.objects.filter(email=email).exists()
     return Response(isEmailAvailable)
 
+
 @api_view(['POST'])
-def registerCognitoUser(request):
-    email = request.POST['email']
-    uuid = request.POST['sub']
-    username = request.POST['username']
-    phone_number = request.POST['phone_number']
-    userData = User(email=email, uuid=uuid, username=username, phone_number=phone_number)
-    userData.save()
-    return HttpResponse(status = status.HTTP_201_CREATED)
+@permission_classes([IsAuthenticated])
+def registerCognitoUserInfo(request):
+    uuid = request.user.uuid
+    data = json.loads(request.body)
+    auth_provider = data['auth_provider']
+    birth_date = datetime.datetime.strptime(data['birth_date'], '%Y-%m-%d')
+    gender = data['gender']
+    username = data['username']
+    user = User.objects.get(uuid=uuid)
+
+    if auth_provider == 'Social':
+        endpoint = f"https://{COGNITO_POOL_DOMAIN}.auth.{COGNITO_AWS_REGION}.amazoncognito.com/oauth2/userInfo"
+        userInfo = requests.get(
+            endpoint, headers={'Authorization': 'Bearer ' + str(request.auth)})
+        email = json.loads(userInfo.content)['email']
+    else:
+        email = data['email']
+        phone_number = data['phone_number']
+        user.phone_number = phone_number
+
+    user.email = email
+    user.username = username
+
+    if UserDetailsStatic.objects.filter(user_id=uuid).exists():
+        userDetailsStatic = UserDetailsStatic.objects.get(user_id=uuid)
+        userDetailsStatic.birth_date = birth_date
+        userDetailsStatic.gender = gender
+    else:
+        userDetailsStatic = UserDetailsStatic(
+            user_id=uuid, birth_date=birth_date, gender=gender)
+
+    user.save()
+    userDetailsStatic.save()
+
+    return HttpResponse(status=status.HTTP_201_CREATED)
