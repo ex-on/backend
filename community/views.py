@@ -5,12 +5,13 @@ import json
 from rest_framework.permissions import IsAuthenticated
 import json
 from community.serializers import *
+import users
 from .models import *
+from users.models import *
 
 # Create your views here.
 
 ############게시판 메인화면###############
-
 
 @api_view(['GET'])
 @permission_classes([])
@@ -22,7 +23,7 @@ def getPostPreview(request):
         "post": post,
         "count": count
     }
-    serializer = PostPreviewSerializer(preview, many = True)
+    serializer = PostPreviewSerializer(preview)
     return Response(serializer.data)
 
 
@@ -37,10 +38,10 @@ def getHotBoardPreview(request):
         instance = Post.objects.filter(id=id)
         post = post | instance
     preview = {
-        "post": post,
+        "post": post.order_by('-creation_date'),
         "count": count
     }
-    serializer = PostPreviewSerializer(preview, many = True)
+    serializer = PostPreviewSerializer(preview)
     return Response(serializer.data)
 
 
@@ -54,102 +55,213 @@ def getQnaMain(request):
         "qna": post,
         "count": count
     }
-    serializer = QnaPreviewSerializer(preview, many = True)
+    serializer = QnaPreviewSerializer(preview)
     return Response(serializer.data)
 
 
 @api_view(['GET'])
 @permission_classes([])
 def getQnaMainSolved(request):
-    preview = QnaPreview.objects.filter(solved=True)
-    index = (request.GET['page_num'] - 1) * 10
-    preview = preview[index : index + 10]
-    serializer = QnaPreviewSerializer(preview, many = True)
+    index = (int(request.GET['page_num']) - 1) * 10
+    qna = Qna.objects.filter(solved = True).order_by('-creation_date')[index:index + 10]
+    count = QnaCount.objects.none()
+    for id in list(qna.values_list('id', flat = True)):
+        instance = QnaCount.objects.filter(qna_id = id)
+        count = count | instance
+    preview = {
+        "qna": qna,
+        "count": count.order_by('-creation_date')
+    }
+    serializer = QnaPreviewSerializer(preview)
     return Response(serializer.data)
 
 
 @api_view(['GET'])
 @permission_classes([])
 def getQnaMainUnsolved(request):
-    preview = QnaPreview.objects.filter(solved=False)
-    index = (request.GET['page_num'] - 1) * 10
-    preview = preview[index : index + 10]
-    serializer = QnaPreviewSerializer(preview, many = True)
+    index = (int(request.GET['page_num']) - 1) * 10
+    qna = Qna.objects.filter(solved = False).order_by('-creation_date')[index:index + 10]
+    count = QnaCount.objects.none()
+    for id in list(qna.values_list('id', flat = True)):
+        instance = QnaCount.objects.filter(qna_id = id)
+        count = count | instance
+    preview = {
+        "qna": qna,
+        "count": count.order_by('-creation_date')
+    }
+    serializer = QnaPreviewSerializer(preview)
     return Response(serializer.data)
 
 
 @api_view(['GET'])
 @permission_classes([])
 def getQnaMainType(request):
-    _type = request.GET['type']
-    preview = QnaPreview.objects.filter(type=_type)
-    index = (request.GET['page_num'] - 1) * 10
-    preview = preview[index : index + 10]
-    serializer = QnaPreviewSerializer(preview, many = True)
+    _type = int(request.GET['type'])
+    index = (int(request.GET['page_num']) - 1) * 10
+    qna = Qna.objects.filter(type = _type).order_by('-creation_date')[index:index + 10]
+    count = QnaCount.objects.none()
+    for id in list(qna.values_list('id', flat = True)):
+        instance = QnaCount.objects.filter(qna_id = id)
+        count = count | instance
+    preview = {
+        "qna": qna,
+        "count": count.order_by('-creation_date')
+    }
+    serializer = QnaPreviewSerializer(preview)
     return Response(serializer.data)
 
 @api_view(['GET'])
 @permission_classes([])
 def getUserPostQna(request):
     _user_id = request.GET['user_id']
-    post = Post.objects.filter(user_id = _user_id)
-    qna = Qna.objects.filter(user_id = _user_id)
+    post = Post.objects.filter(user_id = _user_id).order_by('-creation_date')
+    qna = Qna.objects.filter(user_id = _user_id).order_by('-creation_date')
     total = {
         "post": post,
         "qna": qna
     }
-    serializer = PostQnaSerializer(total, many = True)
+    serializer = PostQnaSerializer(total)
     return Response(serializer.data)
     
 ############게시물 확인#################
 
+@api_view(['GET'])
+@permission_classes([])
+def getPost(request):
+    _post_id = request.GET['post_id']
+    post = Post.objects.filter(id = _post_id)
+    post_count = PostCount.objects.filter(post_id = _post_id)
+    user_name = User.objects.filter(uuid = post[0].user_id)
+    user_profile = UserDetailsStatic.objects.filter(user_id = post[0].user_id)
+    total = {
+        "post": post,
+        "post_count": post_count,
+        "user_name": user_name,
+        "user_profile": user_profile
+    }
+    serializer = PostViewSerializer(total)
+    return Response(serializer.data)
+
+@api_view(['GET'])
+@permission_classes([])
+def getPostComment(request):
+    _post_id = request.GET['post_id']
+    comment = PostComment.objects.filter(post_id = _post_id).order_by('-creation_date')
+    comment_count = PostCommentCount.objects.none()
+    user = User.objects.none()
+    user_profile = UserDetailsStatic.objects.none()
+    print(list(comment.values_list('id', flat = True)))
+    for id in list(comment.values_list('id', flat = True)):
+        instance = PostCommentCount.objects.filter(post_comment_id = id)
+        comment_count = comment_count | instance
+    for id in list(comment.values_list('user_id', flat = True)):
+        user_instance = User.objects.filter(uuid = id)
+        user = user | user_instance
+        profile_instance = UserDetailsStatic.objects.filter(user_id = id)
+        user_profile = user_profile | profile_instance
+    print(user, user_profile)
+    print(user_profile.values('profile_icon'))
+    total = {
+        "comment": comment,
+        "comment_count": comment_count,
+        "user_name": user,
+        "user_profile": user_profile
+    }
+    serializer = PostCommentViewSerializer(total)
+    return Response(serializer.data)
 
 @api_view(['GET'])
 @permission_classes([])
 def getPostCommentReply(request):
     _post_id = request.GET['post_id']
-    post = Post.objects.filter(id=_post_id)
-    comment = PostComment.objects.filter(post_id=_post_id)
-    reply = PostCommentReply.objects.filter(post_id=_post_id)
+    reply = PostCommentReply.objects.filter(post_id = _post_id)
+    reply_count = PostCommentReplyCount.objects.none()
+    user = User.objects.none()
+    user_profile = UserDetailsStatic.objects.none()
+    for id in list(reply.values_list('id', flat = True)):
+        instance = PostCommentReplyCount.objects.filter(post_comment_reply_id = id)
+        reply_count = reply_count | instance
+    for user_id in list(reply.values_list('user_id', flat = True)):
+        user_instance = User.objects.filter(uuid = user_id)
+        user = user | user_instance
+        profile_instance = UserDetailsStatic.objects.filter(user_id = user_id)
+        user_profile = user_profile | profile_instance
     total = {
-        "post": post,
-        "comment": comment,
-        "reply": reply
+        "reply": reply.order_by('-creation_date'),
+        "reply_count": reply_count,
+        "user_name": user,
+        "user_profile": user_profile
     }
-    serializer = PostCommentReplyFinalSerializer(total)
+    serializer = PostCommentReplyViewSerializer(total)
     return Response(serializer.data)
-
 
 @api_view(['GET'])
-@permission_classes([IsAuthenticated])
+@permission_classes([])
+def getQna(request):
+    _qna_id = request.GET['qna_id']
+    qna = Qna.objects.filter(id = _qna_id)
+    qna_count = QnaCount.objects.filter(qna_id = _qna_id)
+    user_name = User.objects.filter(uuid = qna[0].user_id)
+    user_profile = UserDetailsStatic.objects.filter(user_id = qna[0].user_id)
+    total = {
+        "qna": qna,
+        "qna_count": qna_count,
+        "user_name": user_name,
+        "user_profile": user_profile
+    }
+    serializer = QnaViewSerializer(total)
+    return Response(serializer.data)
+
+@api_view(['GET'])
+@permission_classes([])
 def getQnaAnswer(request):
     _qna_id = request.GET['qna_id']
-    qna = Qna.objects.filter(id=_qna_id)
-    answer = QnaAnswer.objects.filter(qna_id=_qna_id)
-    qnaanswer = {
-        "qna": qna,
-        "answer": answer
+    answer = QnaAnswer.objects.filter(qna_id = _qna_id)
+    answer_count = QnaAnswerCount.objects.none()
+    user = User.objects.none()
+    user_profile = UserDetailsStatic.objects.none()
+    for id in list(answer.values_list('id', flat = True)):
+        instance = QnaAnswerCount.objects.filter(qna_answer_id = id)
+        answer_count = answer_count | instance
+    for user_id in list(answer.values_list('user_id', flat = True)):
+        user_instance = User.objects.filter(uuid = user_id)
+        user = user | user_instance
+        profile_instance = UserDetailsStatic.objects.filter(user_id = user_id)
+        user_profile = user_profile | profile_instance
+    total = {
+        "answer": answer.order_by('-creation_date'),
+        "answer_count": answer_count,
+        "user_name": user,
+        "user_profile": user_profile
     }
-    serializer = QnaAnswerFinalSerializer(qnaanswer)
+    serializer = QnaAnswerViewSerializer(total)
     return Response(serializer.data)
-    # return Response(qnaanswer)
-
 
 @api_view(['GET'])
 @permission_classes([])
 def getQnaAnswerCommentReply(request):
     _qna_answer_id = request.GET['qna_answer_id']
-    comment = QnaAnswerComment.objects.filter(qna_answer_id=_qna_answer_id)
-    reply = QnaAnswerCommentReply.objects.filter(qna_answer_id=_qna_answer_id)
-    commentreply = {
+    comment = QnaAnswerComment.objects.filter(qna_answer_id = _qna_answer_id)
+    reply = QnaAnswerCommentReply.objects.filter(qna_answer_id = _qna_answer_id)
+    user_id_list = list(comment.values_list('user_id', flat = True)) + list(reply.values_list('user_id', flat = True))
+    user_name = User.objects.none()
+    user_profile = UserDetailsStatic.objects.none()
+    for id in user_id_list:
+        user_instance = User.objects.filter(uuid = id)
+        profile_instance = UserDetailsStatic.objects.filter(user_id = id)
+        user_name = user_name | user_instance
+        user_profile = user_profile | profile_instance
+    total = {
         "comment": comment,
-        "reply": reply
+        "reply": reply,
+        "user_name": user_name,
+        "user_profile": user_profile
     }
-    serializer = QnaAnswerCommentReplyFinalSerializer(commentreply)
+    serializer = QnaAnswerCommentReplyViewSerializer(total)
     return Response(serializer.data)
+        
 
 ############게시물 작성#################
-
 
 @api_view(['POST'])
 @permission_classes([])

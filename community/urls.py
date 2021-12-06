@@ -1,6 +1,6 @@
 from django.urls import path
 
-from community.views import getHotBoardPreview, getPostCommentReply, getPostPreview, getQnaAnswer, getQnaAnswerCommentReply, getQnaMain, getQnaMainSolved, getQnaMainType, getQnaMainUnsolved, getUserPostQna, postPost, postPostComment, postPostCommentReply, postQna, postQnaAnswer, postQnaAnswerComment, postQnaAnswerCommentReply
+from community.views import *
 
 urlpatterns = [
     ########게시판 메인화면###########
@@ -12,9 +12,12 @@ urlpatterns = [
     path('qnamaintype', getQnaMainType), #page_num & type
     path('userpost', getUserPostQna),
     ########게시물 확인###############
-    path('getpost', getPostCommentReply), #post_id
-    path('getqnaanswer', getQnaAnswer), #qna_id
-    path('getqnaanswercommentreply', getQnaAnswerCommentReply), #qna_answer_id   
+    path('getpost', getPost), #post_id
+    path('getpostcomment', getPostComment),
+    path('getpostcommentreply', getPostCommentReply),
+    path('getqna', getQna),
+    path('getqnaanswer', getQnaAnswer),
+    path('getqnaanswercommentreply', getQnaAnswerCommentReply),
     ########게시물 작성###############
     path('post', postPost),
     path('postcomment', postPostComment),
