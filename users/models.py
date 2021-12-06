@@ -5,6 +5,7 @@ from django.contrib.auth.models import PermissionsMixin, UserManager
 from users.validators import UsernameValidator
 from core.models import AbstractBaseModel
 
+
 class User(PermissionsMixin, AbstractBaseUser, AbstractBaseModel):
     """
     Table contains cognito-users & django-users(admin).
@@ -30,7 +31,7 @@ class User(PermissionsMixin, AbstractBaseUser, AbstractBaseModel):
     ### Cognito-user related fields ###
     # some additional fields which will be filled-out only for users registered via Cognito
     phone_number = models.CharField(max_length=11, blank=True, null=True)
-    
+
     ### Django-user related fields ###
     # password is inherited from AbstractBaseUser
     # allow non-unique emails
@@ -66,10 +67,11 @@ class UserDetailsCount(models.Model):
 class UserDetailsStatic(models.Model):
     user = models.ForeignKey(User, models.DO_NOTHING)
     gender = models.IntegerField()
-    activity_level = models.IntegerField()
+    birth_date = models.DateField()
+    activity_level = models.IntegerField(default=0)
     physical_level = models.IntegerField(blank=True, null=True)
     intro_text = models.CharField(max_length=30, blank=True, null=True)
-    profile_icon = models.IntegerField()
+    profile_icon = models.IntegerField(default=0)
 
     class Meta:
         managed = True
@@ -100,7 +102,8 @@ class UsersLikedPosts(models.Model):
 
 class UsersLikedQnaPosts(models.Model):
     user = models.ForeignKey(User, models.DO_NOTHING)
-    qna_post = models.ForeignKey('community.Qna', models.DO_NOTHING, blank=True, null=True)
+    qna_post = models.ForeignKey(
+        'community.Qna', models.DO_NOTHING, blank=True, null=True)
 
     class Meta:
         managed = True
@@ -118,7 +121,8 @@ class UsersSavedPosts(models.Model):
 
 class UsersSavedQnaPosts(models.Model):
     user = models.ForeignKey(User, models.DO_NOTHING)
-    qna_post = models.ForeignKey('community.Qna', models.DO_NOTHING, blank=True, null=True)
+    qna_post = models.ForeignKey(
+        'community.Qna', models.DO_NOTHING, blank=True, null=True)
 
     class Meta:
         managed = True

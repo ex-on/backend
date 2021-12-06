@@ -32,9 +32,6 @@ class CustomRemoteUserBackend(RemoteUserBackend):
             user, created = UserModel._default_manager.get_or_create(**{
                 UserModel.UUID_FIELD: username
             })
-            print(UserModel._default_manager.get_or_create(**{
-                UserModel.UUID_FIELD: username
-            }))
             if created:  # ← Attention
                 args = (request, user)
                 try:
@@ -57,10 +54,3 @@ class CustomRemoteUserBackend(RemoteUserBackend):
             except UserModel.DoesNotExist:
                 pass
         return user if self.user_can_authenticate(user) else None
-
-    # def configure_user(self, request, user: User):
-    #     decodedToken = cognito_jwt_decode_handler(
-    #         request.META['Authorization'])
-    #     user.uuid = decodedToken['sub']
-    #     user.save()
-        # return super().configure_user(request, user)
