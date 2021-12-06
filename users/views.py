@@ -8,6 +8,7 @@ from .models import *
 import json
 import datetime
 import requests
+from core.utils.jwt import cognito_jwt_decode_handler
 # Create your views here.
 
 
@@ -20,6 +21,14 @@ def checkAvailableEmail(request):
     return Response(isEmailAvailable)
 
 
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def checkAvailableUsername(request):
+    username = request.GET['username']
+    isUsernameAvailable = not User.objects.filter(username=username).exists()
+    return Response(isUsernameAvailable)
+
+
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def registerCognitoUserInfo(request):
@@ -30,12 +39,17 @@ def registerCognitoUserInfo(request):
     gender = data['gender']
     username = data['username']
     user = User.objects.get(uuid=uuid)
+    print(request.META)
 
     if auth_provider == 'Social':
         endpoint = f"https://{COGNITO_POOL_DOMAIN}.auth.{COGNITO_AWS_REGION}.amazoncognito.com/oauth2/userInfo"
         userInfo = requests.get(
             endpoint, headers={'Authorization': 'Bearer ' + str(request.auth)})
+        print(json.loads(userInfo.content))
         email = json.loads(userInfo.content)['email']
+    elif auth_provider == 'Kakao':
+        email = data['email']
+        user.email = email
     else:
         email = data['email']
         phone_number = data['phone_number']
@@ -54,5 +68,21 @@ def registerCognitoUserInfo(request):
 
     user.save()
     userDetailsStatic.save()
+
+    return HttpResponse(status=status.HTTP_201_CREATED)
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def cognitoUserPhysicalInfo(request):
+    uuid = request.user.uuid
+    data = json.loads(request.body)
+    height = data['height']
+    weight = data['weight']
+    muscleMass = data['muscle_mass']
+    bodyFatPercentage = data['body_fat_percentage']
+    userPhysicalData = UserPhysicalData(
+        user_id=uuid, height=height, weight=weight, muscle_mass=muscleMass, body_fat_percentage=bodyFatPercentage)
+    userPhysicalData.save()
 
     return HttpResponse(status=status.HTTP_201_CREATED)

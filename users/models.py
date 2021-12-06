@@ -3,10 +3,10 @@ from django.db import models
 from django.contrib.auth.base_user import AbstractBaseUser
 from django.contrib.auth.models import PermissionsMixin, UserManager
 from users.validators import UsernameValidator
-from core.models import AbstractBaseModel
+from core.models import AbstractBaseModel, AbstractBaseUserModel
 
 
-class User(PermissionsMixin, AbstractBaseUser, AbstractBaseModel):
+class User(PermissionsMixin, AbstractBaseUser, AbstractBaseUserModel):
     """
     Table contains cognito-users & django-users(admin).
     PermissionsMixin leverage built-in django model permissions system
@@ -80,10 +80,11 @@ class UserDetailsStatic(models.Model):
 
 class UserPhysicalData(models.Model):
     user = models.ForeignKey(User, models.DO_NOTHING)
-    date = models.DateField()
+    height = models.FloatField(blank = True, null = True)
     weight = models.FloatField(blank=True, null=True)
     muscle_mass = models.FloatField(blank=True, null=True)
     body_fat_percentage = models.FloatField(blank=True, null=True)
+    created_at = models.DateTimeField('Created at', auto_now_add=True, null=True)
 
     class Meta:
         managed = True
