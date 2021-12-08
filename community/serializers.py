@@ -3,6 +3,7 @@ from django.db import models
 from django.db.models import fields
 from django.utils import tree
 from rest_framework import serializers
+from rest_framework.fields import CharField
 
 from community.models import *
 from users.models import *
@@ -11,12 +12,12 @@ class PostSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Post
-        fields = "__all__"
+        fields = ("title", "content", "creation_date", "modified")
 
 class PostCountSerializer(serializers.ModelSerializer):
     class Meta:
         model = PostCount
-        fields = "__all__"
+        fields = ("count_likes", "count_comments", "count_saved")
 
 class PostCommentSerializer(serializers.ModelSerializer):
     class Meta:

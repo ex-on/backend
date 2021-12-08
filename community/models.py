@@ -10,6 +10,7 @@ class Post(models.Model):
     title = models.CharField(max_length=30)
     content = models.CharField(max_length=500)
     modified = models.BooleanField()
+    type = models.BooleanField(default = False)
 
     class Meta:
         managed = True
