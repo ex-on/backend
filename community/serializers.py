@@ -19,15 +19,20 @@ class PostCountSerializer(serializers.ModelSerializer):
         model = PostCount
         fields = ("count_likes", "count_comments", "count_saved")
 
+class PostCountMiniSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PostCount
+        fields = ("count_likes", "count_comments")
+
 class PostCommentSerializer(serializers.ModelSerializer):
     class Meta:
         model = PostComment
-        fields = "__all__"
+        fields = ("content", "creation_date")
     
 class PostCommentCountSerializer(serializers.ModelSerializer):
     class Meta:
         model = PostCommentCount
-        fields = "__all__"
+        fields = ["count_likes"]
 
 class PostCommentReplySerializer(serializers.ModelSerializer):
     class Meta:
@@ -49,10 +54,10 @@ class UserProfileSerializer(serializers.ModelSerializer):
         model = UserDetailsStatic
         fields = ['user_id', 'profile_icon']
         
-class PostPreviewSerializer(serializers.Serializer):
-    post = PostSerializer(many = True)
-    count = PostCountSerializer(many = True)
-
+class PostPreviewSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Post
+        fields = ('id', 'title', 'content', 'creation_date')
 class PostViewSerializer(serializers.Serializer):
     post = PostSerializer(many = True)
     post_count = PostCountSerializer(many = True)
@@ -100,10 +105,15 @@ class QnaAnswerCommentReplySerializer(serializers.ModelSerializer):
         model = QnaAnswerCommentReply
         fields = "__all__"
 
-class QnaPreviewSerializer(serializers.Serializer):
-    qna = QnaSerializer(many = True)
-    count = QnaCountSerializer(many = True)
-
+class QnaPreviewSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Qna
+        fields  = ("id", "title", "content", "creation_date")
+        
+class QnaCountMiniSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = QnaCount
+        fields = ("count_total_likes", "count_answers")
 class QnaViewSerializer(serializers.Serializer):
     qna = QnaSerializer(many = True)
     qna_count = QnaCountSerializer(many = True)
