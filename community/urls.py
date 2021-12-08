@@ -26,4 +26,12 @@ urlpatterns = [
     path('qnaanswer', postQnaAnswer),
     path('qnaanswercomment', postQnaAnswerComment),
     path('qnaanswercommentreply', postQnaAnswerCommentReply),
+    ########게시물 수정###############
+    path('modifypost', modifyPost),
+    path('modifypostcomment', modifyPostComment),
+    path('modifypostcommentreply', modifyPostCommentReply),
+    path('modifyqna', modifyQna),
+    path('modifyqnaanswer', modifyQnaAnswer),
+    path('modifyqnaanswercomment', modifyQnaAnswerComment),
+    path('modifyqnaanswercommentreply', modifyQnaAnswerCommentReply),
 ]
