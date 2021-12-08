@@ -29,6 +29,19 @@ def checkAvailableUsername(request):
     return Response(isUsernameAvailable)
 
 
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def checkUserInfo(request):
+    uuid = request.user.uuid
+    user = User.objects.get(uuid=uuid)
+    if (UserDetailsStatic.objects.filter(user_id=uuid).exists()):
+        userDetailsStatic = UserDetailsStatic.objects.get(user_id=uuid)
+        userInfoExists = (user.username is not None) & (userDetailsStatic.birth_date is not None) & (userDetailsStatic.gender is not None)
+    else:
+        userInfoExists = False
+    return Response(userInfoExists)
+
+
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def registerCognitoUserInfo(request):

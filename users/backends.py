@@ -54,3 +54,8 @@ class CustomRemoteUserBackend(RemoteUserBackend):
             except UserModel.DoesNotExist:
                 pass
         return user if self.user_can_authenticate(user) else None
+
+    def configure_user(self, request, user):
+        if not user.username:
+            user.username = user.uuid[:20]
+            user.save()
