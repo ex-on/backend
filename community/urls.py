@@ -1,20 +1,22 @@
 from django.urls import path
 
-from community.views import getHotBoardPreview, getPostCommentReply, getPostPreview, getQnaAnswer, getQnaAnswerCommentReply, getQnaMain, getQnaMainSolved, getQnaMainType, getQnaMainUnsolved, getUserPostQna, postPost, postPostComment, postPostCommentReply, postQna, postQnaAnswer, postQnaAnswerComment, postQnaAnswerCommentReply
+from community.views import *
 
 urlpatterns = [
     ########게시판 메인화면###########
-    path('postmain', getPostPreview), #page_num
-    path('hotboardmain', getHotBoardPreview), #page_num
-    path('qnamain', getQnaMain), #page_num
-    path('qnamainsolved', getQnaMainSolved), #page_num
-    path('qnamainunsolved', getQnaMainUnsolved), #page_num
-    path('qnamaintype', getQnaMainType), #page_num & type
-    path('userpost', getUserPostQna),
+    path('postmain', getPostPreview),  # page_num
+    path('hotboardmain', getHotBoardPreview),  # page_num
+    path('qnamain', getQnaMain),  # page_num
+    path('qnamainsolved', getQnaMainSolved),  # page_num
+    path('qnamainunsolved', getQnaMainUnsolved),  # page_num
+    path('qnamaintype', getQnaMainType),  # page_num & type
+    path('user_recent_community', getUserPostQna),
     ########게시물 확인###############
-    path('getpost', getPostCommentReply), #post_id
-    path('getqnaanswer', getQnaAnswer), #qna_id
-    path('getqnaanswercommentreply', getQnaAnswerCommentReply), #qna_answer_id   
+    path('getpost', getPost),  # post_id
+    path('getpostcomments', getPostComments),
+    path('getqna', getQna),
+    path('getqnaanswer', getQnaAnswer),
+    path('getqnaanswercommentreply', getQnaAnswerCommentReply),
     ########게시물 작성###############
     path('post', postPost),
     path('postcomment', postPostComment),
@@ -23,4 +25,12 @@ urlpatterns = [
     path('qnaanswer', postQnaAnswer),
     path('qnaanswercomment', postQnaAnswerComment),
     path('qnaanswercommentreply', postQnaAnswerCommentReply),
+    ########게시물 수정###############
+    path('modifypost', modifyPost),
+    path('modifypostcomment', modifyPostComment),
+    path('modifypostcommentreply', modifyPostCommentReply),
+    path('modifyqna', modifyQna),
+    path('modifyqnaanswer', modifyQnaAnswer),
+    path('modifyqnaanswercomment', modifyQnaAnswerComment),
+    path('modifyqnaanswercommentreply', modifyQnaAnswerCommentReply),
 ]

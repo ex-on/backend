@@ -41,6 +41,16 @@ def checkUserInfo(request):
         userInfoExists = False
     return Response(userInfoExists)
 
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def getUserInfo(request):
+    uuid = request.user.uuid
+    userInfo = {
+        'username': User.objects.get(uuid=uuid).username,
+        'profile_icon': UserDetailsStatic.objects.get(user_id=uuid).profile_icon,
+        'created_at': User.objects.get(uuid=uuid).created_at
+    }
+    return Response(userInfo)
 
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
