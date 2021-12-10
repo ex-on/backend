@@ -1,6 +1,6 @@
 from django.db.models import fields
 from rest_framework import serializers
-from .models import ExercisePlanWeightSet, Exercise, ExerciseDetails, ExercisePlanWeight, ExerciseRecordWeight, ExerciseRecordWeightSet
+from .models import ExercisePlanWeightSet, Exercise, ExerciseDetails, ExercisePlanAerobic, ExerciseRecordWeight, ExerciseRecordWeightSet, ExerciseRecordAerobic
 
 
 class ExerciseSerializer(serializers.ModelSerializer):
@@ -8,43 +8,43 @@ class ExerciseSerializer(serializers.ModelSerializer):
         model = Exercise
         fields = ('name', 'target_muscle', 'exercise_method', 'difficulty',)
 
-
-class TodayExerciseTimeSerializer(serializers.ModelSerializer):
-    class Meta:
-        fields = ('duration')
-
 class ExerciseDetailsSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = ExerciseDetails
         fields = ('exercise', 'recommended_duration', 'info_text')
 
-class UserExercisePlanWeightSerializer(serializers.ModelSerializer):
-
-    class Meta:
-        model = ExercisePlanWeight
-        fields = ('user', 'exercise', 'date', 'num_sets')
-
-class UserExercisePlanWeightSetsSerializer(serializers.ModelSerializer):
-
-    class Meta:
-        model = ExercisePlanWeightSet
-        fields = ('exercise_plan_weight', 'set_num', 'target_weight', 'target_reps')
-
-class UserExerciseRecordWeightSerializer(serializers.ModelSerializer):
-
-    class Meta:
-        model = ExerciseRecordWeight
-        fields = ('user', 'exercise_plan_weight_id', 'total_sets', 'date', 'start_time', 'end_time')
-
-class UserExerciseRecordWeightSetsSerializer(serializers.ModelSerializer):
-
-    class Meta:
-        model = ExerciseRecordWeightSet
-        fields = ('exercise_record_weight', 'record_weight', 'record_reps', 'start_time', 'end_time', 'set_num')
-
 class ExercisePlanWeightSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = ExercisePlanWeightSet
         fields = ('exercise_plan_weight', 'set_num', 'target_weight', 'target_reps')
+
+class ExercisePlanWeightSetSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ExercisePlanWeightSet
+        fields = ('exercise_plan_weight_id', 'set_num', 'target_weight', 'target_reps')
+
+class ExercisePlanAerobicSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ExercisePlanAerobic
+        fields = ('user_id', 'exercise_id', 'date', 'target_distance', 'target_duration')
+
+############ 운동 기록 조회 ################
+class ExerciseRecordWeightSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ExerciseRecordWeight
+        fields = ('user_id', 'exercise_id', 'exercise_plan_weight_id', 'total_sets', 'date', 'start_time', 'end_time', 'target_muscle')
+
+class ExerciseRecordWeightSetSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ExerciseRecordWeightSet
+        fields = ('exercise_record_weight_id', 'record_weight', 'record_reps', 'start_time', 'end_time', 'set_num')
+
+class ExerciseRecordAerobicSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ExerciseRecordAerobic
+        fields = ('user_id', 'exercise_plan_aerobic_id', 'record_distance', 'record_duration', 'date', 'start_time', 'end_time', 'exercise_id')
+
+class ExerciseTimeSerializer(serializers.Serializer):
+    duration = serializers.DurationField()
