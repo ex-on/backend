@@ -10,7 +10,7 @@ class Post(models.Model):
     title = models.CharField(max_length=30)
     content = models.CharField(max_length=500)
     modified = models.BooleanField()
-    type = models.IntegerField(default = False)
+    type = models.IntegerField()
 
     class Meta:
         managed = True
@@ -21,7 +21,7 @@ class PostComment(models.Model):
     user = models.ForeignKey('users.User', models.DO_NOTHING)
     post = models.ForeignKey(Post, on_delete=CASCADE)
     content = models.CharField(max_length=100)
-    creation_date = models.DateTimeField()
+    creation_date = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         managed = True
@@ -30,8 +30,8 @@ class PostComment(models.Model):
 
 class PostCommentCount(models.Model):
     post_comment = models.ForeignKey(PostComment, models.DO_NOTHING)
-    count_likes = models.IntegerField()
-    count_reports = models.IntegerField(blank=True, null=True)
+    count_likes = models.IntegerField(default=0)
+    count_reports = models.IntegerField(default=0)
 
     class Meta:
         managed = True
@@ -43,7 +43,7 @@ class PostCommentReply(models.Model):
     post = models.ForeignKey(Post, models.DO_NOTHING)
     post_comment = models.ForeignKey(PostComment, models.DO_NOTHING)
     content = models.CharField(max_length=100)
-    creation_date = models.DateTimeField()
+    creation_date = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         managed = True
@@ -54,9 +54,9 @@ class PostCount(models.Model):
     post = models.OneToOneField(Post, on_delete=CASCADE)
     creation_date = models.DateTimeField()
     count_likes = models.IntegerField()
-    count_comments = models.IntegerField()
-    count_saved = models.IntegerField()
-    count_reports = models.IntegerField(blank=True, null=True)
+    count_comments = models.IntegerField(default=0)
+    count_saved = models.IntegerField(default=0)
+    count_reports = models.IntegerField(default=0)
 
     class Meta:
         managed = True
@@ -65,8 +65,8 @@ class PostCount(models.Model):
 
 class PostCommentReplyCount(models.Model):
     post_comment_reply = models.ForeignKey(PostCommentReply, models.DO_NOTHING)
-    count_likes = models.IntegerField()
-    count_reports = models.IntegerField(blank=True, null=True)
+    count_likes = models.IntegerField(default=0)
+    count_reports = models.IntegerField(default=0)
 
     class Meta:
         managed = True

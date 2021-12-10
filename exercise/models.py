@@ -2,10 +2,9 @@ from django.db import models
 # Create your models here
 
 class Exercise(models.Model):
-    name = models.CharField(max_length=15)
+    name = models.CharField(max_length=20)
     target_muscle = models.IntegerField()
     exercise_method = models.IntegerField()
-    difficulty = models.IntegerField()
 
     class Meta:
         managed = True
