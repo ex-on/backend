@@ -2,7 +2,8 @@ from django.http.response import HttpResponse
 from django.shortcuts import render
 from django.utils import tree
 from rest_framework.response import Response
-from rest_framework.decorators import api_view
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import IsAuthenticated
 import datetime
 import json
 
@@ -11,9 +12,8 @@ from .serializers import ExerciseDetailsSerializer, ExercisePlanAerobicSerialize
 # Create your views here.
 
 ########### 운동 종류 및 세부 정보 조회 #############################
-
-
 @api_view(['GET'])
+@permission_classes([IsAuthenticated])
 def getExercise(request):
     exerciseList = Exercise.objects.all()
     serializer = ExerciseSerializer(exerciseList, many=True)
