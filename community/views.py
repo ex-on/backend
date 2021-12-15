@@ -1,4 +1,5 @@
 from django.http.response import HttpResponse
+from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.decorators import api_view, permission_classes
 import json
@@ -227,21 +228,20 @@ def getUserPostQna(request):
 def getPost(request):
     post_id = request.GET['post_id']
     post = Post.objects.get(id=post_id)
-    post_count = PostCount.objects.get(post_id=post_id)
     data = {
         "user_data": {
             "username": User.objects.get(uuid=post.user_id).username,
             "profile_icon": UserDetailsStatic.objects.get(user_id=post.user_id).profile_icon
         },
         "post": PostSerializer(post).data,
-        "post_count": PostCountSerializer(post_count).data
     }
     return Response(data)
 
 
 @api_view(['GET'])
-@permission_classes([])
+@permission_classes([IsAuthenticated])
 def getPostComments(request):
+    uuid = request.user.uuid
     post_id = request.GET['post_id']
     comments = PostComment.objects.filter(
         post_id=post_id).order_by('creation_date')
@@ -249,9 +249,7 @@ def getPostComments(request):
     totalDataList = []
     for comment in comments:
         replyDataList = []
-        print(comment.id)
         commentReplies = replies.filter(post_comment_id=comment.id)
-        print(commentReplies)
         for reply in commentReplies:
             replyData = {
                 "user_data": {
@@ -259,17 +257,19 @@ def getPostComments(request):
                     "profile_icon": UserDetailsStatic.objects.get(user_id=reply.user_id).profile_icon
                 },
                 "reply_data": PostCommentReplySerializer(reply).data,
-                "reply_count": PostCommentReplyCountSerializer(PostCommentReplyCount.objects.get(post_comment_reply_id=reply.id)).data
+                "reply_count": PostCommentReplyCountSerializer(PostCommentReplyCount.objects.get(post_comment_reply_id=reply.id)).data,
+                "liked": UsersLikedPostCommentReplies.objects.filter(user_id=uuid, post_comment_reply_id=reply.id).exists()
             }
             replyDataList.append(replyData)
         data = {
-            "comment": {
+            "comments": {
                 "user_data": {
                     "username": User.objects.get(uuid=comment.user_id).username,
                     "profile_icon": UserDetailsStatic.objects.get(user_id=comment.user_id).profile_icon
                 },
                 "comment_data": PostCommentSerializer(comment).data,
-                "comment_count": PostCommentCountSerializer(PostCommentCount.objects.get(post_comment_id=comment.id)).data
+                "comment_count": PostCommentCountSerializer(PostCommentCount.objects.get(post_comment_id=comment.id)).data,
+                "liked": UsersLikedPostComments.objects.filter(user_id=uuid, post_comment_id=comment.id).exists()
             },
             "replies": replyDataList
         }
@@ -378,6 +378,9 @@ def postPostComment(request):
     count_instance = PostCommentCount(
         post_comment_id=comment_instance.id, count_likes=0, count_reports=0)
     count_instance.save()
+    post_count = PostCount.objects.get(post_id=data['post_id'])
+    post_count.count_comments += 1
+    post_count.save()
     return HttpResponse(status=200)
 
 
@@ -392,6 +395,9 @@ def postPostCommentReply(request):
     count_instance = PostCommentReplyCount(
         post_comment_reply_id=reply_instance.id,)
     count_instance.save()
+    post_count = PostCount.objects.get(post_id=data['post_id'])
+    post_count.count_comments += 1
+    post_count.save()
     return HttpResponse(status=200)
 
 
@@ -517,3 +523,160 @@ def modifyQnaAnswerCommentReply(request):
     reply.content = request['content']
     reply.save()
     return HttpResponse(status=200)
+
+    ########게시물 좋아요, 저장###############
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def getPostUserStatus(request):
+    uuid = request.user.uuid
+    postId = request.GET['post_id']
+    extent = request.GET['extent']
+    resData = {}
+    if (extent == 'likes' or 'all'):
+        isLiked = UsersLikedPosts.objects.filter(
+            user_id=uuid, post_id=postId).exists()
+        resData['is_liked'] = isLiked
+    if (extent == 'saved' or 'all'):
+        isSaved = UsersSavedPosts.objects.filter(
+            user_id=uuid, post_id=postId).exists()
+        resData['is_saved'] = isSaved
+    return Response(resData)
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def getPostCount(request):
+    post_id = request.GET['post_id']
+    post_count = PostCount.objects.get(post_id=post_id)
+    data = PostCountSerializer(post_count).data
+
+    return Response(data)
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def getPostCommentsCount(request):
+    postId = request.GET['post_id']
+    postComments = PostComment.objects.filter(post_id=postId)
+    postCommentsCount = []
+    for comment in postComments:
+        postCommentCount = PostCommentCount.objects.get(
+            post_comment_id=comment.id)
+        postCommentsCount.append(postCommentCount)
+    data = PostCommentCountSerializer(postCommentsCount, many=True).data
+
+    return Response(data)
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def updatePostLikeCount(request):
+    uuid = request.user.uuid
+    data = json.loads(request.body)
+    postCount = PostCount.objects.get(post_id=data['post_id'])
+    if data['add'] == True:
+        postCount.count_likes += 1
+        usersLikedPosts = UsersLikedPosts(
+            user_id=uuid, post_id=data['post_id'])
+        postCount.save()
+        usersLikedPosts.save()
+    else:
+        postCount.count_likes -= 1
+        usersLikedPosts = UsersLikedPosts.objects.filter(
+            user_id=uuid, post_id=data['post_id'])
+        postCount.save()
+        usersLikedPosts.delete()
+    return HttpResponse(status=status.HTTP_200_OK)
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def updatePostSavedCount(request):
+    uuid = request.user.uuid
+    data = json.loads(request.body)
+    postCount = PostCount.objects.get(post_id=data['post_id'])
+    if data['add'] == True:
+        print('add saved')
+        postCount.count_saved += 1
+        usersSavedPosts = UsersSavedPosts(
+            user_id=uuid, post_id=data['post_id'])
+        postCount.save()
+        usersSavedPosts.save()
+    else:
+        postCount.count_saved -= 1
+        usersSavedPosts = UsersSavedPosts.objects.filter(
+            user_id=uuid, post_id=data['post_id'])
+        postCount.save()
+        usersSavedPosts.delete()
+    return HttpResponse(status=status.HTTP_200_OK)
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def updatePostCommentLikeCount(request):
+    uuid = request.user.uuid
+    data = json.loads(request.body)
+    postCommentCount = PostCommentCount.objects.get(
+        post_comment_id=data['post_comment_id'])
+    if data['add'] == True:
+        postCommentCount.count_likes += 1
+        usersLikedPostComments = UsersLikedPostComments(
+            user_id=uuid, post_comment_id=data['post_comment_id'])
+        postCommentCount.save()
+        usersLikedPostComments.save()
+    else:
+        postCommentCount.count_likes -= 1
+        usersLikedPostComments = UsersLikedPostComments.objects.filter(
+            user_id=uuid, post_comment_id=data['post_comment_id'])
+        postCommentCount.save()
+        usersLikedPostComments.delete()
+    return HttpResponse(status=status.HTTP_200_OK)
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def updatePostCommentReplyLikeCount(request):
+    uuid = request.user.uuid
+    data = json.loads(request.body)
+    postCommentReplyCount = PostCommentReplyCount.objects.get(
+        post_comment_reply_id=data['post_comment_reply_id'])
+    if data['add'] == True:
+        postCommentReplyCount.count_likes += 1
+        usersLikedPostCommentReplies = UsersLikedPostCommentReplies(
+            user_id=uuid, post_comment_reply_id=data['post_comment_reply_id'])
+        postCommentReplyCount.save()
+        usersLikedPostCommentReplies.save()
+    else:
+        postCommentReplyCount.count_likes -= 1
+        usersLikedPostCommentReplies = UsersLikedPostCommentReplies.objects.filter(
+            user_id=uuid, post_comment_reply_id=data['post_comment_reply_id'])
+        postCommentReplyCount.save()
+        usersLikedPostCommentReplies.delete()
+    return HttpResponse(status=status.HTTP_200_OK)
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def getSavedPostPreview(request):
+    user_id = request.user.uuid
+    userSavedPosts = UsersSavedPosts.objects.filter(user_id=user_id)
+
+    postData = []
+    for data in userSavedPosts:
+        post = Post.objects.get(id=data.post_id)
+        if len(post.content) > 70:
+            post.content = post.content[0:70] + "..."
+        post.creation_date = timecalculator(post.creation_date)
+        preview = {
+            "user_data": {
+                "username": User.objects.get(uuid=post.user_id).username,
+                "profile_icon": UserDetailsStatic.objects.get(user_id=post.user_id).profile_icon
+            },
+            "post_data": PostPreviewSerializer(post).data,
+            "count": PostCountMiniSerializer(PostCount.objects.get(post_id=post.id)).data
+        }
+        postData.append(preview)
+
+    return Response(postData)
