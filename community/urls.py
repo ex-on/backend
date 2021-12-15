@@ -33,4 +33,13 @@ urlpatterns = [
     path('modifyqnaanswer', modifyQnaAnswer),
     path('modifyqnaanswercomment', modifyQnaAnswerComment),
     path('modifyqnaanswercommentreply', modifyQnaAnswerCommentReply),
+    ########게시물 좋아요, 저장###############
+    path('get_post_count', getPostCount),
+    path('update_post_count/likes', updatePostLikeCount),
+    path('update_post_comment_count/likes', updatePostCommentLikeCount),
+    path('update_post_comment_reply_count/likes', updatePostCommentReplyLikeCount),
+    path('update_post_count/saved', updatePostSavedCount),
+    path('get_post_user_status', getPostUserStatus),
+    ########게시판 보관함###########
+    path('get_saved_posts', getSavedPostPreview),
 ]

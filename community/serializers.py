@@ -36,14 +36,14 @@ class PostCommentSerializer(serializers.ModelSerializer):
 
 class PostCommentCountSerializer(serializers.ModelSerializer):
     class Meta:
-        model = PostCommentCount
+        model = PostCommentReplyCount
         fields = ["count_likes"]
 
 
 class PostCommentReplySerializer(serializers.ModelSerializer):
     class Meta:
         model = PostCommentReply
-        fields = ["content", "creation_date"]
+        fields = ['id', "content", "creation_date"]
 
 
 class PostCommentReplyCountSerializer(serializers.ModelSerializer):

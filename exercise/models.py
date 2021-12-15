@@ -1,6 +1,7 @@
 from django.db import models
 # Create your models here
 
+
 class Exercise(models.Model):
     name = models.CharField(max_length=20)
     target_muscle = models.IntegerField()
@@ -36,7 +37,7 @@ class ExercisePlanAerobic(models.Model):
 class ExercisePlanWeight(models.Model):
     user = models.ForeignKey('users.User', models.DO_NOTHING)
     exercise = models.ForeignKey(Exercise, models.DO_NOTHING)
-    date = models.DateField()
+    date = models.DateField(auto_now_add=True)
     num_sets = models.IntegerField(blank=True, null=True)
 
     class Meta:
@@ -85,7 +86,8 @@ class ExerciseRecordAerobicRest(models.Model):
 class ExerciseRecordWeight(models.Model):
     user = models.ForeignKey('users.User', models.DO_NOTHING)
     exercise = models.ForeignKey(Exercise, models.DO_NOTHING)
-    exercise_plan_weight = models.ForeignKey(ExercisePlanWeight, models.DO_NOTHING)
+    exercise_plan_weight = models.ForeignKey(
+        ExercisePlanWeight, models.DO_NOTHING)
     total_sets = models.IntegerField()
     date = models.DateField()
     start_time = models.DateTimeField()
