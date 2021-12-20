@@ -40,6 +40,23 @@ urlpatterns = [
     path('update_post_comment_reply_count/likes', updatePostCommentReplyLikeCount),
     path('update_post_count/saved', updatePostSavedCount),
     path('get_post_user_status', getPostUserStatus),
+    path('update_qna_count/saved', updateQnaSavedCount),
     ########게시판 보관함###########
     path('get_saved_posts', getSavedPostPreview),
+    ########게시물 신고#######################
+    path('update_report_post', updateUserReportedPosts),
+    path('update_report_post_comment', updateUserReportedPostComments),
+    path('update_report_post_comment_reply', updateUserReportedPostCommentReplies),
+    path('update_report_qna', updateUserReportedQnas),
+    path('update_report_qna_answer', updateUserReportedQnaAnswers),
+    path('update_report_qna_answer_comment', updateUserReportedQnaAnswerComments),
+    path('update_report_qna_answer_comment_reply', updateUserReportedQnaAnswerCommentReplies),
+    ########게시물 삭제#######################
+    path('delete_post', deletePost),
+    path('delete_post_comment', deletePostComment),
+    path('delete_post_comment_reply', deletePostCommentReply),
+    path('delete_qna', deleteQna),
+    path('delete_qna_answer', deleteQnaAnswer),
+    path('delete_qna_answer_comment', deleteQnaAnswerComment),
+    path('delete_qna_answer_comment_reply', deleteQnaAnswerCommentReply),
 ]

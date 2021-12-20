@@ -1,4 +1,6 @@
+import re
 from django.http.response import HttpResponse
+from django.db import IntegrityError
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.decorators import api_view, permission_classes
@@ -30,7 +32,6 @@ def timecalculator(date_time):
         return zeroadder(date_time.hour) + ":" + zeroadder(date_time.minute)
     else:
         return str(delta // 60) + "분 전"
-
 
 @api_view(['GET'])
 @permission_classes([])
@@ -606,12 +607,32 @@ def updatePostSavedCount(request):
         usersSavedPosts.save()
     else:
         postCount.count_saved -= 1
-        usersSavedPosts = UsersSavedPosts.objects.filter(
+        usersSavedPosts = UsersSavedPosts.objects.get(
             user_id=uuid, post_id=data['post_id'])
         postCount.save()
         usersSavedPosts.delete()
     return HttpResponse(status=status.HTTP_200_OK)
 
+@api_view(['POST'])
+@api_view([IsAuthenticated])
+def updateQnaSavedCount(request):
+    uuid = request.user.uuid
+    data = json.loads(request.body)
+    qnaCount = QnaCount.objects.get(qna_id=data['qna_id'])
+    if data['add'] == True:
+        print('add saved')
+        qnaCount.count_saved += 1
+        usersSavedQnaPosts = UsersSavedQnaPosts(
+            user_id=uuid, qna_id=data['qna_id'])
+        qnaCount.save()
+        usersSavedQnaPosts.save()
+    else:
+        qnaCount.count_saved -= 1
+        usersSavedQnaPosts = UsersSavedQnaPosts.objects.get(
+            user_id=uuid, post_id=data['post_id'])
+        qnaCount.save()
+        usersSavedQnaPosts.delete()
+    return HttpResponse(status=status.HTTP_200_OK)
 
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
@@ -680,3 +701,138 @@ def getSavedPostPreview(request):
         postData.append(preview)
 
     return Response(postData)
+
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def updateUserReportedPosts(request):
+    request = json.loads(request.body)
+    try: 
+        UsersReportedPosts.objects.create(user_id = request['user_id'], post_id = request['post_id'])
+        return HttpResponse(status = status.HTTP_200_OK)
+    except IntegrityError: 
+        pass
+        return HttpResponse(status = status.HTTP_208_ALREADY_REPORTED)
+
+@api_view(['POST'])
+@permission_classes([])
+def updateUserReportedPostComments(request):
+    request = json.loads(request.body)
+    try: 
+        UsersReportedPostComments.objects.create(user_id = request['user_id'], comment_id = request['comment_id'])
+        return HttpResponse(status = status.HTTP_200_OK)
+    except IntegrityError: 
+        pass
+        return HttpResponse(status = status.HTTP_208_ALREADY_REPORTED)
+
+@api_view(['POST'])
+@permission_classes([])
+def updateUserReportedPostCommentReplies(request):
+    request = json.loads(request.body)
+    try: 
+        UsersReportedPostCommentReplies.objects.create(user_id = request['user_id'], reply_id = request['reply_id'])
+        return HttpResponse(status = status.HTTP_200_OK)
+    except IntegrityError: 
+        pass
+        return HttpResponse(status = status.HTTP_208_ALREADY_REPORTED)
+
+@api_view(['POST'])
+@permission_classes([])
+def updateUserReportedQnas(request):
+    request = json.loads(request.body)
+    try: 
+        UsersReportedQnas.objects.create(user_id = request['user_id'], qna_id = request['qna_id'])
+        return HttpResponse(status = status.HTTP_200_OK)
+    except IntegrityError: 
+        pass
+        return HttpResponse(status = status.HTTP_208_ALREADY_REPORTED)
+
+@api_view(['POST'])
+@permission_classes([])
+def updateUserReportedQnaAnswers(request):
+    request = json.loads(request.body)
+    try: 
+        UsersReportedQnaAnswers.objects.create(user_id = request['user_id'], answer_id = request['answer_id'])
+        return HttpResponse(status = status.HTTP_200_OK)
+    except IntegrityError: 
+        pass
+        return HttpResponse(status = status.HTTP_208_ALREADY_REPORTED)
+
+@api_view(['POST'])
+@permission_classes([])
+def updateUserReportedQnaAnswerComments(request):
+    request = json.loads(request.body)
+    try: 
+        UsersReportedQnaAnswerComments.objects.create(user_id = request['user_id'], comment_id = request['comment_id'])
+        return HttpResponse(status = status.HTTP_200_OK)
+    except IntegrityError: 
+        pass
+        return HttpResponse(status = status.HTTP_208_ALREADY_REPORTED)
+
+@api_view(['POST'])
+@permission_classes([])
+def updateUserReportedQnaAnswerCommentReplies(request):
+    request = json.loads(request.body)
+    try: 
+        UsersReportedQnaAnswerCommentReplies.objects.create(user_id = request['user_id'], reply_id = request['reply_id'])
+        return HttpResponse(status = status.HTTP_200_OK)
+    except IntegrityError: 
+        pass
+        return HttpResponse(status = status.HTTP_208_ALREADY_REPORTED)
+
+@api_view(['POST'])
+@permission_classes([])
+def deletePost(request):
+    request = json.loads(request.body)
+    instance = Post.objects.get(user_id = request['user_id'], id = request['post_id'])
+    instance.delete()
+    return HttpResponse(status = status.HTTP_200_OK)
+
+@api_view(['POST'])
+@permission_classes([])
+def deletePostComment(request):
+    request = json.loads(request.body)
+    instance = PostComment.objects.get(user_id = request['user_id'], id = request['comment_id'])
+    instance.delete()
+    return HttpResponse(status = status.HTTP_200_OK)
+
+@api_view(['POST'])
+@permission_classes([])
+def deletePostCommentReply(request):
+    request = json.loads(request.body)
+    instance = PostCommentReply.objects.get(user_id = request['user_id'], id = request['reply_id'])
+    instance.delete()
+    return HttpResponse(status = status.HTTP_200_OK)
+
+@api_view(['POST'])
+@permission_classes([])
+def deleteQna(request):
+    request = json.loads(request.body)
+    instance = Qna.objects.get(user_id = request['user_id'], id = request['qna_id'])
+    instance.delete()
+    return HttpResponse(status = status.HTTP_200_OK)
+
+@api_view(['POST'])
+@permission_classes([])
+def deleteQnaAnswer(request):
+    request = json.loads(request.body)
+    instance = QnaAnswer.objects.get(user_id = request['user_id'], id = request['answer_id'])
+    instance.delete()
+    return HttpResponse(status = status.HTTP_200_OK)
+
+@api_view(['POST'])
+@permission_classes([])
+def deleteQnaAnswerComment(request):
+    request = json.loads(request.body)
+    instance = QnaAnswerComment.objects.get(user_id = request['user_id'], id = request['comment_id'])
+    instance.delete()
+    return HttpResponse(status = status.HTTP_200_OK)
+
+@api_view(['POST'])
+@permission_classes([])
+def deleteQnaAnswerCommentReply(request):
+    request = json.loads(request.body)
+    instance = QnaAnswerCommentReply.objects.get(user_id = request['user_id'], id = request['reply_id'])
+    instance.delete()
+    return HttpResponse(status = status.HTTP_200_OK)
