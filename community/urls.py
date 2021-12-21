@@ -4,9 +4,9 @@ from community.views import *
 
 urlpatterns = [
     ########게시판 메인화면###########
-    path('postmain', getPostPreview),  # page_num
-    path('hotboardmain', getHotBoardPreview),  # page_num
-    path('qnamain', getQnaMain),  # page_num
+    path('post_list', getPostPreview),  # page_num
+    path('post_list/hot', getHotPostPreview),  # page_num
+    path('qna_list', getQnaPreview),  # page_num
     path('qnamainsolved', getQnaMainSolved),  # page_num
     path('qnamainunsolved', getQnaMainUnsolved),  # page_num
     path('qnamaintype', getQnaMainType),  # page_num & type

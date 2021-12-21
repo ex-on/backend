@@ -17,19 +17,19 @@ from users.models import *
 ############게시판 메인화면###############
 
 
-def zeroadder(num):
+def zeroAdder(num):
     if num < 10:
         return "0" + str(num)
     else:
         return str(num)
 
 
-def timecalculator(date_time):
+def timeCalculator(date_time):
     delta = (datetime.datetime.now() - date_time.replace(tzinfo=None)).seconds
     if datetime.date.today() != date_time.date():
-        return zeroadder(date_time.month) + "/" + zeroadder(date_time.day)
+        return zeroAdder(date_time.month) + "/" + zeroAdder(date_time.day)
     elif delta // 3600 > 0:
-        return zeroadder(date_time.hour) + ":" + zeroadder(date_time.minute)
+        return zeroAdder(date_time.hour) + ":" + zeroAdder(date_time.minute)
     else:
         return str(delta // 60) + "분 전"
 
@@ -49,7 +49,7 @@ def getPostPreview(request):
     for post in posts:
         if len(post.content) > 70:
             post.content = post.content[0:70] + "..."
-        post.creation_date = timecalculator(post.creation_date)
+        post.creation_date = timeCalculator(post.creation_date)
         preview = {
             "user_data": {
                 "username": User.objects.get(uuid=post.user_id).username,
@@ -64,7 +64,7 @@ def getPostPreview(request):
 
 @api_view(['GET'])
 @permission_classes([])
-def getHotBoardPreview(request):
+def getHotPostPreview(request):
     index_num = int(request.GET['index_num'])
     index = (int(request.GET['page_num']) - 1) * index_num
     counts = PostCount.objects.filter(count_likes__gt=9).order_by(
@@ -74,7 +74,7 @@ def getHotBoardPreview(request):
         post = Post.objects.get(id=count.post_id)
         if len(post.content) > 70:
             post.content = post.content[0:70] + "..."
-        post.creation_date = timecalculator(post.creation_date)
+        post.creation_date = timeCalculator(post.creation_date)
         preview = {
             "user_data": {
                 "username": User.objects.get(uuid=post.user_id).username,
@@ -89,21 +89,45 @@ def getHotBoardPreview(request):
 
 @api_view(['GET'])
 @permission_classes([])
-def getQnaMain(request):
+def getQnaPreview(request):
     index = (int(request.GET['page_num']) - 1) * 10
     qnas = Qna.objects.order_by('-creation_date')[index:index + 10]
     return_data = []
     for qna in qnas:
         if len(qna.content) > 70:
             qna.content = qna.content[0:70] + "..."
-        qna.creation_date = timecalculator(qna.creation_date)
+        qna.creation_date = timeCalculator(qna.creation_date)
         preview = {
             "user_data": {
                 "username": User.objects.get(uuid=qna.user_id).username,
                 "profile_icon": UserDetailsStatic.objects.get(user_id=qna.user_id).profile_icon
             },
-            "post_data": QnaPreviewSerializer(qna).data,
+            "qna_data": QnaPreviewSerializer(qna).data,
             "count": QnaCountMiniSerializer(QnaCount.objects.get(qna_id=qna.id)).data
+        }
+        return_data.append(preview)
+    return Response(return_data)
+
+@api_view(['GET'])
+@permission_classes([])
+def getHotQnaPreview(request):
+    index_num = int(request.GET['index_num'])
+    index = (int(request.GET['page_num']) - 1) * index_num
+    counts = QnaCount.objects.filter(count_likes__gt=9).order_by(
+        '-creation_date')[index:index + index_num]
+    return_data = []
+    for count in counts:
+        qna = Qna.objects.get(id=count.qna_id)
+        if len(qna.content) > 70:
+            qna.content = qna.content[0:70] + "..."
+        qna.creation_date = timeCalculator(qna.creation_date)
+        preview = {
+            "user_data": {
+                "username": User.objects.get(uuid=qna.user_id).username,
+                "profile_icon": UserDetailsStatic.objects.get(user_id=qna.user_id).profile_icon
+            },
+            "post_data": PostPreviewSerializer(qna).data,
+            "count": QnaCountMiniSerializer(QnaCount.objects.get(post_id=qna.id)).data
         }
         return_data.append(preview)
     return Response(return_data)
@@ -119,7 +143,7 @@ def getQnaMainSolved(request):
     for qna in qnas:
         if len(qna.content) > 70:
             qna.content = qna.content[0:70] + "..."
-        qna.creation_date = timecalculator(qna.creation_date)
+        qna.creation_date = timeCalculator(qna.creation_date)
         preview = {
             "user_data": {
                 "username": User.objects.get(uuid=qna.user_id).username,
@@ -142,7 +166,7 @@ def getQnaMainUnsolved(request):
     for qna in qnas:
         if len(qna.content) > 70:
             qna.content = qna.content[0:70] + "..."
-        qna.creation_date = timecalculator(qna.creation_date)
+        qna.creation_date = timeCalculator(qna.creation_date)
         preview = {
             "user_data": {
                 "username": User.objects.get(uuid=qna.user_id).username,
@@ -166,7 +190,7 @@ def getQnaMainType(request):
     for qna in qnas:
         if len(qna.content) > 70:
             qna.content = qna.content[0:70] + "..."
-        qna.creation_date = timecalculator(qna.creation_date)
+        qna.creation_date = timeCalculator(qna.creation_date)
         preview = {
             "user_data": {
                 "username": User.objects.get(uuid=qna.user_id).username,
@@ -194,7 +218,7 @@ def getUserPostQna(request):
     for post in posts:
         if len(post.content) > 70:
             post.content = post.content[0:70] + "..."
-        post.creation_date = timecalculator(post.creation_date)
+        post.creation_date = timeCalculator(post.creation_date)
         data = {
             "post_data": PostPreviewSerializer(post).data,
             "count": PostCountMiniSerializer(PostCount.objects.get(post_id=post.id)).data
@@ -208,7 +232,7 @@ def getUserPostQna(request):
             "qna_data": {
                 "qna_title": qna.title,
                 "answer_content": answer.content,
-                "creation_date": timecalculator(answer.creation_date)
+                "creation_date": timeCalculator(answer.creation_date)
             },
             "count": QnaCountMiniSerializer(QnaCount.objects.get(qna_id=qna.id)).data
         }
@@ -689,7 +713,7 @@ def getSavedPostPreview(request):
         post = Post.objects.get(id=data.post_id)
         if len(post.content) > 70:
             post.content = post.content[0:70] + "..."
-        post.creation_date = timecalculator(post.creation_date)
+        post.creation_date = timeCalculator(post.creation_date)
         preview = {
             "user_data": {
                 "username": User.objects.get(uuid=post.user_id).username,
