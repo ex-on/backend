@@ -138,7 +138,7 @@ class QnaPreview(models.Model):
 class QnaCount(models.Model):
     qna = models.ForeignKey(Qna, models.DO_NOTHING)
     creation_date = models.DateTimeField()
-    count_total_likes = models.IntegerField()
+    count_likes = models.IntegerField()
     count_answers = models.IntegerField()
     count_saved = models.IntegerField()
     count_total_comments = models.IntegerField()
