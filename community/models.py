@@ -81,33 +81,33 @@ class Qna(models.Model):
     creation_date = models.DateTimeField()
     modified = models.BooleanField()
     solved = models.BooleanField()
-    type = models.IntegerField()
+    type = models.IntegerField(default=1)
 
     class Meta:
         managed = True
-        db_table = 'post_qna'
+        db_table = 'qna'
 
 
 class QnaAnswer(models.Model):
     user = models.ForeignKey('users.User', models.DO_NOTHING)
     qna = models.ForeignKey(Qna, models.DO_NOTHING)
     content = models.CharField(max_length=500)
-    creation_date = models.DateTimeField()
+    creation_date = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         managed = True
-        db_table = 'post_qna_answer'
+        db_table = 'qna_answer'
 
 
 class QnaAnswerComment(models.Model):
     qna_answer = models.ForeignKey(QnaAnswer, models.DO_NOTHING)
     user = models.ForeignKey('users.User', models.DO_NOTHING)
     content = models.CharField(max_length=100)
-    creation_date = models.DateTimeField()
+    creation_date = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         managed = True
-        db_table = 'post_qna_answer_comment'
+        db_table = 'qna_answer_comment'
 
 
 class QnaAnswerCommentReply(models.Model):
@@ -115,11 +115,11 @@ class QnaAnswerCommentReply(models.Model):
     qna_answer_comment = models.ForeignKey(QnaAnswerComment, models.DO_NOTHING)
     user = models.ForeignKey('users.User', models.DO_NOTHING)
     content = models.CharField(max_length=100)
-    creation_date = models.DateTimeField()
+    creation_date = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         managed = True
-        db_table = 'post_qna_answer_comment_reply'
+        db_table = 'qna_answer_comment_reply'
 
 
 class QnaPreview(models.Model):
@@ -132,7 +132,7 @@ class QnaPreview(models.Model):
 
     class Meta:
         managed = True
-        db_table = 'post_qna_preview'
+        db_table = 'qna_preview'
 
 
 class QnaCount(models.Model):
@@ -141,12 +141,12 @@ class QnaCount(models.Model):
     count_likes = models.IntegerField()
     count_answers = models.IntegerField()
     count_saved = models.IntegerField()
-    count_total_comments = models.IntegerField()
+    count_comments = models.IntegerField()
     count_reports = models.IntegerField()
 
     class Meta:
         managed = True
-        db_table = 'post_qna_count'
+        db_table = 'qna_count'
 
 
 class QnaAnswerCount(models.Model):
@@ -157,8 +157,16 @@ class QnaAnswerCount(models.Model):
 
     class Meta:
         managed = True
-        db_table = 'post_qna_answer_count'
+        db_table = 'qna_answer_count'
 
+class QnaAnswerCommentCount(models.Model):
+    qna_answer_comment = models.ForeignKey(QnaAnswerComment, models.DO_NOTHING)
+    count_likes = models.IntegerField()
+    count_reports = models.IntegerField()
+
+    class Meta:
+        managed = True
+        db_table = 'qna_answer_comment_count'
 
 class UsersReportedPosts(models.Model):
     user = models.ForeignKey('users.User', models.DO_NOTHING)
