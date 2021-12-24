@@ -1,4 +1,5 @@
 import re
+from django.db.models.query import QuerySet
 from django.http.response import HttpResponse
 from django.db import IntegrityError
 from rest_framework import status
@@ -11,6 +12,8 @@ from community.serializers import *
 import datetime
 from .models import *
 from users.models import *
+from itertools import chain
+from operator import attrgetter
 
 # Create your views here.
 
@@ -32,6 +35,7 @@ def timeCalculator(date_time):
         return zeroAdder(date_time.hour) + ":" + zeroAdder(date_time.minute)
     else:
         return str(delta // 60) + "분 전"
+
 
 @api_view(['GET'])
 @permission_classes([])
@@ -90,8 +94,14 @@ def getHotPostPreview(request):
 @api_view(['GET'])
 @permission_classes([])
 def getQnaPreview(request):
-    index = (int(request.GET['page_num']) - 1) * 10
-    qnas = Qna.objects.order_by('-creation_date')[index:index + 10]
+    type = int(request.GET['type'])
+    index_num = int(request.GET['index_num'])
+    index = (int(request.GET['page_num']) - 1) * index_num
+    if type == 0:
+        qnas = Qna.objects.order_by('-creation_date')[index:index + 10]
+    else:
+        qnas = Qna.objects.filter(type=type).order_by(
+            '-creation_date')[index:index + index_num]
     return_data = []
     for qna in qnas:
         if len(qna.content) > 70:
@@ -107,6 +117,7 @@ def getQnaPreview(request):
         }
         return_data.append(preview)
     return Response(return_data)
+
 
 @api_view(['GET'])
 @permission_classes([])
@@ -126,8 +137,8 @@ def getHotQnaPreview(request):
                 "username": User.objects.get(uuid=qna.user_id).username,
                 "profile_icon": UserDetailsStatic.objects.get(user_id=qna.user_id).profile_icon
             },
-            "post_data": PostPreviewSerializer(qna).data,
-            "count": QnaCountMiniSerializer(QnaCount.objects.get(post_id=qna.id)).data
+            "qna_data": QnaPreviewSerializer(qna).data,
+            "count": QnaCountMiniSerializer(QnaCount.objects.get(qna_id=qna.id)).data
         }
         return_data.append(preview)
     return Response(return_data)
@@ -205,7 +216,7 @@ def getQnaMainType(request):
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
-def getUserPostQna(request):
+def getUserRecentPostQna(request):
     if "user_id" in request.GET:
         user_id = request.GET['user_id']
     else:
@@ -232,7 +243,9 @@ def getUserPostQna(request):
             "qna_data": {
                 "qna_title": qna.title,
                 "answer_content": answer.content,
-                "creation_date": timeCalculator(answer.creation_date)
+                "creation_date": timeCalculator(answer.creation_date),
+                "id": qna.id,
+                "type": qna.type
             },
             "count": QnaCountMiniSerializer(QnaCount.objects.get(qna_id=qna.id)).data
         }
@@ -305,76 +318,86 @@ def getPostComments(request):
 @api_view(['GET'])
 @permission_classes([])
 def getQna(request):
-    _qna_id = request.GET['qna_id']
-    qna = Qna.objects.filter(id=_qna_id)
-    if qna.first() == None:
-        qna_count = QnaCount.objects.none()
-        user_name = User.objects.none()
-        user_profile = UserDetailsStatic.objects.none()
-    else:
-        qna_count = QnaCount.objects.filter(qna_id=_qna_id)
-        user_name = User.objects.filter(uuid=qna.first().user_id)
-        user_profile = UserDetailsStatic.objects.filter(
-            user_id=qna.first().user_id)
-    total = {
-        "qna": qna,
-        "qna_count": qna_count,
-        "username": user_name,
-        "user_profile": user_profile
+    qna_id = request.GET['qna_id']
+    qna = Qna.objects.get(id=qna_id)
+    data = {
+        "user_data": {
+            "username": User.objects.get(uuid=qna.user_id).username,
+            "profile_icon": UserDetailsStatic.objects.get(user_id=qna.user_id).profile_icon
+        },
+        "qna": QnaSerializer(qna).data,
     }
-    serializer = QnaViewSerializer(total)
-    return Response(serializer.data)
+    return Response(data)
 
 
 @api_view(['GET'])
-@permission_classes([])
-def getQnaAnswer(request):
-    _qna_id = request.GET['qna_id']
-    answer = QnaAnswer.objects.filter(qna_id=_qna_id)
-    answer_count = QnaAnswerCount.objects.none()
-    user = User.objects.none()
-    user_profile = UserDetailsStatic.objects.none()
-    for id in list(answer.values_list('id', flat=True)):
-        instance = QnaAnswerCount.objects.filter(qna_answer_id=id)
-        answer_count = answer_count | instance
-    for user_id in list(answer.values_list('user_id', flat=True)):
-        user_instance = User.objects.filter(uuid=user_id)
-        user = user | user_instance
-        profile_instance = UserDetailsStatic.objects.filter(user_id=user_id)
-        user_profile = user_profile | profile_instance
-    total = {
-        "answer": answer.order_by('-creation_date'),
-        "answer_count": answer_count,
-        "username": user,
-        "user_profile": user_profile
-    }
-    serializer = QnaAnswerViewSerializer(total)
-    return Response(serializer.data)
+@permission_classes([IsAuthenticated])
+def getQnaAnswers(request):
+    uuid = request.user.uuid
+    qna_id = request.GET['qna_id']
+    answers = QnaAnswer.objects.filter(qna_id=qna_id)
+    dataList = []
+    for answer in answers:
+        dataList.append({
+            "user_data": {
+                "username": User.objects.get(uuid=answer.user_id).username,
+                "profile_icon": UserDetailsStatic.objects.get(user_id=answer.user_id).profile_icon
+            },
+            "answer_data": QnaAnswerSerializer(answer).data,
+            "answer_count": QnaAnswerCountSerializer(QnaAnswerCount.objects.get(qna_answer_id=answer.id)).data,
+            "liked": UsersLikedQnaAnswers.objects.filter(user_id=uuid, qna_answer_id=answer.id).exists()
+        })
+    return Response(dataList)
 
 
 @api_view(['GET'])
-@permission_classes([])
-def getQnaAnswerCommentReply(request):
-    _qna_answer_id = request.GET['qna_answer_id']
-    comment = QnaAnswerComment.objects.filter(qna_answer_id=_qna_answer_id)
-    reply = QnaAnswerCommentReply.objects.filter(qna_answer_id=_qna_answer_id)
-    user_id_list = list(comment.values_list('user_id', flat=True)) + \
-        list(reply.values_list('user_id', flat=True))
-    user_name = User.objects.none()
-    user_profile = UserDetailsStatic.objects.none()
-    for id in user_id_list:
-        user_instance = User.objects.filter(uuid=id)
-        profile_instance = UserDetailsStatic.objects.filter(user_id=id)
-        user_name = user_name | user_instance
-        user_profile = user_profile | profile_instance
-    total = {
-        "comment": comment,
-        "reply": reply,
-        "username": user_name,
-        "user_profile": user_profile
+@permission_classes([IsAuthenticated])
+def getQnaAnswerComments(request):
+    uuid = request.user.uuid
+    answer_id = request.GET['answer_id']
+    comments = QnaAnswerComment.objects.filter(qna_answer_id=answer_id)
+    replies = QnaAnswerCommentReply.objects.filter(qna_answer_id=answer_id)
+    dataList = []
+    for comment in comments:
+        replyDataList = []
+        commentReplies = replies.filter(qna_answer_comment_id=comment.id)
+        for reply in commentReplies:
+            replyData = {
+                "user_data": {
+                    "username": User.objects.get(uuid=reply.user_id).username,
+                    "profile_icon": UserDetailsStatic.objects.get(user_id=reply.user_id).profile_icon
+                },
+                "reply_data": QnaAnswerCommentReplySerializer(reply).data,
+            }
+            replyDataList.append(replyData)
+        data = {
+            "comment": {
+                "user_data": {
+                    "username": User.objects.get(uuid=comment.user_id).username,
+                    "profile_icon": UserDetailsStatic.objects.get(user_id=comment.user_id).profile_icon
+                },
+                "comment_data": QnaAnswerCommentSerializer(comment).data,
+                "comment_count": QnaAnswerCommentCountSerializer(QnaAnswerCommentCount.objects.get(qna_answer_comment_id=comment.id)).data,
+                "liked": UsersLikedQnaAnswerComments.objects.filter(user_id=uuid, qna_answer_comment_id=comment.id).exists()
+            },
+            "replies": replyDataList
+        }
+        dataList.append(data)
+
+    return Response(dataList)
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def getQnaUserStatus(request):
+    uuid = request.user.uuid
+    qnaId = request.GET['qna_id']
+    isSaved = UsersSavedQnas.objects.filter(
+        user_id=uuid, qna_id=qnaId).exists()
+    resData = {
+        'is_saved': isSaved
     }
-    serializer = QnaAnswerCommentReplyViewSerializer(total)
-    return Response(serializer.data)
+    return Response(resData)
 
 ############게시물 작성#################
 
@@ -434,7 +457,7 @@ def postQna(request):
                        creation_date=request['creation_date'], modified=False, solved=False, type=request['type'])
     qna_instance.save()
     count_instance = QnaCount(qna_id=qna_instance.id, creation_date=request['creation_date'],
-                              count_total_likes=0, count_answers=0, count_saved=0, count_total_comments=0, count_reports=0)
+                              count_likes=0, count_answers=0, count_saved=0, count_total_comments=0, count_reports=0)
     count_instance.save()
     return HttpResponse(status=200)
 
@@ -453,22 +476,27 @@ def postQnaAnswer(request):
 
 
 @api_view(['POST'])
-@permission_classes([])
+@permission_classes([IsAuthenticated])
 def postQnaAnswerComment(request):
+    uuid = request.user.uuid
     request = json.loads(request.body)
-    answer_instance = QnaAnswerComment(
-        user_id=request['user_id'], qna_answer_id=request['qna_answer_id'], content=request['content'], creation_date=request['creation_date'])
-    answer_instance.save()
+    comment = QnaAnswerComment(
+        user_id=uuid, qna_answer_id=request['answer_id'], content=request['content'])
+    comment.save()
+    commentCount = QnaAnswerCommentCount(
+        qna_answer_comment_id=comment.id, count_likes=0, count_reports=0)
+    commentCount.save()
     return HttpResponse(status=200)
 
 
 @api_view(['POST'])
-@permission_classes([])
+@permission_classes([IsAuthenticated])
 def postQnaAnswerCommentReply(request):
+    uuid = request.user.uuid
     request = json.loads(request.body)
-    answer_instance = QnaAnswerCommentReply(user_id=request['user_id'], qna_answer_id=request['qna_answer_id'],
-                                            qna_answer_comment_id=request['qna_answer_comment_id'], content=request['content'], creation_date=request['creation_date'])
-    answer_instance.save()
+    reply = QnaAnswerCommentReply(user_id=uuid, qna_answer_id=request['answer_id'],
+                                  qna_answer_comment_id=request['qna_answer_comment_id'], content=request['content'])
+    reply.save()
     return HttpResponse(status=200)
 
 ############ 게시물 수정 #######################
@@ -582,6 +610,16 @@ def getPostCount(request):
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
+def getQnaCount(request):
+    qna_id = request.GET['qna_id']
+    qna_count = QnaCount.objects.get(qna_id=qna_id)
+    data = QnaCountSerializer(qna_count).data
+
+    return Response(data)
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
 def getPostCommentsCount(request):
     postId = request.GET['post_id']
     postComments = PostComment.objects.filter(post_id=postId)
@@ -623,7 +661,6 @@ def updatePostSavedCount(request):
     data = json.loads(request.body)
     postCount = PostCount.objects.get(post_id=data['post_id'])
     if data['add'] == True:
-        print('add saved')
         postCount.count_saved += 1
         usersSavedPosts = UsersSavedPosts(
             user_id=uuid, post_id=data['post_id'])
@@ -637,26 +674,49 @@ def updatePostSavedCount(request):
         usersSavedPosts.delete()
     return HttpResponse(status=status.HTTP_200_OK)
 
+
 @api_view(['POST'])
-@api_view([IsAuthenticated])
+@permission_classes([IsAuthenticated])
 def updateQnaSavedCount(request):
     uuid = request.user.uuid
     data = json.loads(request.body)
     qnaCount = QnaCount.objects.get(qna_id=data['qna_id'])
     if data['add'] == True:
-        print('add saved')
         qnaCount.count_saved += 1
-        usersSavedQnaPosts = UsersSavedQnaPosts(
+        usersSavedQnas = UsersSavedQnas(
             user_id=uuid, qna_id=data['qna_id'])
         qnaCount.save()
-        usersSavedQnaPosts.save()
+        usersSavedQnas.save()
     else:
         qnaCount.count_saved -= 1
-        usersSavedQnaPosts = UsersSavedQnaPosts.objects.get(
-            user_id=uuid, post_id=data['post_id'])
+        usersSavedQnas = UsersSavedQnas.objects.get(
+            user_id=uuid, qna_id=data['qna_id'])
         qnaCount.save()
-        usersSavedQnaPosts.delete()
+        usersSavedQnas.delete()
     return HttpResponse(status=status.HTTP_200_OK)
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def updateQnaAnswerLikeCount(request):
+    uuid = request.user.uuid
+    data = json.loads(request.body)
+    qnaAnswerCount = QnaAnswerCount.objects.get(
+        qna_answer_id=data['qna_answer_id'])
+    if data['add'] == True:
+        qnaAnswerCount.count_likes += 1
+        usersLikedQnaAnswers = UsersLikedQnaAnswers(
+            user_id=uuid, qna_answer_id=data['qna_answer_id'])
+        qnaAnswerCount.save()
+        usersLikedQnaAnswers.save()
+    else:
+        qnaAnswerCount.count_likes -= 1
+        usersLikedQnaAnswers = UsersLikedQnaAnswers.objects.filter(
+            user_id=uuid, qna_answer_id=data['qna_answer_id'])
+        qnaAnswerCount.save()
+        usersLikedQnaAnswers.delete()
+    return HttpResponse(status=status.HTTP_200_OK)
+
 
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
@@ -677,6 +737,28 @@ def updatePostCommentLikeCount(request):
             user_id=uuid, post_comment_id=data['post_comment_id'])
         postCommentCount.save()
         usersLikedPostComments.delete()
+    return HttpResponse(status=status.HTTP_200_OK)
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def updateQnaAnswerCommentLikeCount(request):
+    uuid = request.user.uuid
+    data = json.loads(request.body)
+    qnaAnswerCommentCount = QnaAnswerCommentCount.objects.get(
+        qna_answer_comment_id=data['qna_answer_comment_id'])
+    if data['add'] == True:
+        qnaAnswerCommentCount.count_likes += 1
+        usersLikedQnaAnswerComments = UsersLikedQnaAnswerComments(
+            user_id=uuid, qna_answer_comment_id=data['qna_answer_comment_id'])
+        qnaAnswerCommentCount.save()
+        usersLikedQnaAnswerComments.save()
+    else:
+        qnaAnswerCommentCount.count_likes -= 1
+        usersLikedQnaAnswerComments = UsersLikedQnaAnswerComments.objects.filter(
+            user_id=uuid, qna_answer_comment_id=data['qna_answer_comment_id'])
+        qnaAnswerCommentCount.save()
+        usersLikedQnaAnswerComments.delete()
     return HttpResponse(status=status.HTTP_200_OK)
 
 
@@ -704,159 +786,208 @@ def updatePostCommentReplyLikeCount(request):
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
-def getSavedPostPreview(request):
+def getSavedPostQnaPreview(request):
     user_id = request.user.uuid
     userSavedPosts = UsersSavedPosts.objects.filter(user_id=user_id)
+    posts = Post.objects.none()
+    for userSavedPost in userSavedPosts:
+        data = Post.objects.filter(id=userSavedPost.post_id)
+        posts = posts.union(data)
+    userSavedQnas = UsersSavedQnas.objects.filter(user_id=user_id)
+    qnas = Qna.objects.none()
+    for userSavedQna in userSavedQnas:
+        data = Qna.objects.filter(id=userSavedQna.qna_id)
+        qnas = qnas.union(data)
+    userSaved = sorted(chain(posts, qnas), key=attrgetter(
+        'creation_date'), reverse=True)
+    savedData = []
+    for data in userSaved:
+        if isinstance(data, Post):
+            if len(data.content) > 70:
+                data.content = data.content[0:70] + "..."
+            data.creation_date = timeCalculator(data.creation_date)
+            preview = {
+                "user_data": {
+                    "username": User.objects.get(uuid=data.user_id).username,
+                    "profile_icon": UserDetailsStatic.objects.get(user_id=data.user_id).profile_icon
+                },
+                "post_data": PostPreviewSerializer(data).data,
+                "count": PostCountMiniSerializer(PostCount.objects.get(post_id=data.id)).data
+            }
+            savedData.append(preview)
+        else:
+            if len(data.content) > 70:
+                data.content = data.content[0:70] + "..."
+            data.creation_date = timeCalculator(data.creation_date)
+            preview = {
+                "user_data": {
+                    "username": User.objects.get(uuid=data.user_id).username,
+                    "profile_icon": UserDetailsStatic.objects.get(user_id=data.user_id).profile_icon
+                },
+                "qna_data": QnaPreviewSerializer(data).data,
+                "count": QnaCountMiniSerializer(QnaCount.objects.get(qna_id=data.id)).data
+            }
+            savedData.append(preview)
 
-    postData = []
-    for data in userSavedPosts:
-        post = Post.objects.get(id=data.post_id)
-        if len(post.content) > 70:
-            post.content = post.content[0:70] + "..."
-        post.creation_date = timeCalculator(post.creation_date)
-        preview = {
-            "user_data": {
-                "username": User.objects.get(uuid=post.user_id).username,
-                "profile_icon": UserDetailsStatic.objects.get(user_id=post.user_id).profile_icon
-            },
-            "post_data": PostPreviewSerializer(post).data,
-            "count": PostCountMiniSerializer(PostCount.objects.get(post_id=post.id)).data
-        }
-        postData.append(preview)
-
-    return Response(postData)
-
+    return Response(savedData)
 
 
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def updateUserReportedPosts(request):
     request = json.loads(request.body)
-    try: 
-        UsersReportedPosts.objects.create(user_id = request['user_id'], post_id = request['post_id'])
-        return HttpResponse(status = status.HTTP_200_OK)
-    except IntegrityError: 
+    try:
+        UsersReportedPosts.objects.create(
+            user_id=request['user_id'], post_id=request['post_id'])
+        return HttpResponse(status=status.HTTP_200_OK)
+    except IntegrityError:
         pass
-        return HttpResponse(status = status.HTTP_208_ALREADY_REPORTED)
+        return HttpResponse(status=status.HTTP_208_ALREADY_REPORTED)
+
 
 @api_view(['POST'])
 @permission_classes([])
 def updateUserReportedPostComments(request):
     request = json.loads(request.body)
-    try: 
-        UsersReportedPostComments.objects.create(user_id = request['user_id'], comment_id = request['comment_id'])
-        return HttpResponse(status = status.HTTP_200_OK)
-    except IntegrityError: 
+    try:
+        UsersReportedPostComments.objects.create(
+            user_id=request['user_id'], comment_id=request['comment_id'])
+        return HttpResponse(status=status.HTTP_200_OK)
+    except IntegrityError:
         pass
-        return HttpResponse(status = status.HTTP_208_ALREADY_REPORTED)
+        return HttpResponse(status=status.HTTP_208_ALREADY_REPORTED)
+
 
 @api_view(['POST'])
 @permission_classes([])
 def updateUserReportedPostCommentReplies(request):
     request = json.loads(request.body)
-    try: 
-        UsersReportedPostCommentReplies.objects.create(user_id = request['user_id'], reply_id = request['reply_id'])
-        return HttpResponse(status = status.HTTP_200_OK)
-    except IntegrityError: 
+    try:
+        UsersReportedPostCommentReplies.objects.create(
+            user_id=request['user_id'], reply_id=request['reply_id'])
+        return HttpResponse(status=status.HTTP_200_OK)
+    except IntegrityError:
         pass
-        return HttpResponse(status = status.HTTP_208_ALREADY_REPORTED)
+        return HttpResponse(status=status.HTTP_208_ALREADY_REPORTED)
+
 
 @api_view(['POST'])
 @permission_classes([])
 def updateUserReportedQnas(request):
     request = json.loads(request.body)
-    try: 
-        UsersReportedQnas.objects.create(user_id = request['user_id'], qna_id = request['qna_id'])
-        return HttpResponse(status = status.HTTP_200_OK)
-    except IntegrityError: 
+    try:
+        UsersReportedQnas.objects.create(
+            user_id=request['user_id'], qna_id=request['qna_id'])
+        return HttpResponse(status=status.HTTP_200_OK)
+    except IntegrityError:
         pass
-        return HttpResponse(status = status.HTTP_208_ALREADY_REPORTED)
+        return HttpResponse(status=status.HTTP_208_ALREADY_REPORTED)
+
 
 @api_view(['POST'])
 @permission_classes([])
 def updateUserReportedQnaAnswers(request):
     request = json.loads(request.body)
-    try: 
-        UsersReportedQnaAnswers.objects.create(user_id = request['user_id'], answer_id = request['answer_id'])
-        return HttpResponse(status = status.HTTP_200_OK)
-    except IntegrityError: 
+    try:
+        UsersReportedQnaAnswers.objects.create(
+            user_id=request['user_id'], answer_id=request['answer_id'])
+        return HttpResponse(status=status.HTTP_200_OK)
+    except IntegrityError:
         pass
-        return HttpResponse(status = status.HTTP_208_ALREADY_REPORTED)
+        return HttpResponse(status=status.HTTP_208_ALREADY_REPORTED)
+
 
 @api_view(['POST'])
 @permission_classes([])
 def updateUserReportedQnaAnswerComments(request):
     request = json.loads(request.body)
-    try: 
-        UsersReportedQnaAnswerComments.objects.create(user_id = request['user_id'], comment_id = request['comment_id'])
-        return HttpResponse(status = status.HTTP_200_OK)
-    except IntegrityError: 
+    try:
+        UsersReportedQnaAnswerComments.objects.create(
+            user_id=request['user_id'], comment_id=request['comment_id'])
+        return HttpResponse(status=status.HTTP_200_OK)
+    except IntegrityError:
         pass
-        return HttpResponse(status = status.HTTP_208_ALREADY_REPORTED)
+        return HttpResponse(status=status.HTTP_208_ALREADY_REPORTED)
+
 
 @api_view(['POST'])
 @permission_classes([])
 def updateUserReportedQnaAnswerCommentReplies(request):
     request = json.loads(request.body)
-    try: 
-        UsersReportedQnaAnswerCommentReplies.objects.create(user_id = request['user_id'], reply_id = request['reply_id'])
-        return HttpResponse(status = status.HTTP_200_OK)
-    except IntegrityError: 
+    try:
+        UsersReportedQnaAnswerCommentReplies.objects.create(
+            user_id=request['user_id'], reply_id=request['reply_id'])
+        return HttpResponse(status=status.HTTP_200_OK)
+    except IntegrityError:
         pass
-        return HttpResponse(status = status.HTTP_208_ALREADY_REPORTED)
+        return HttpResponse(status=status.HTTP_208_ALREADY_REPORTED)
+
 
 @api_view(['POST'])
 @permission_classes([])
 def deletePost(request):
     request = json.loads(request.body)
-    instance = Post.objects.get(user_id = request['user_id'], id = request['post_id'])
+    instance = Post.objects.get(
+        user_id=request['user_id'], id=request['post_id'])
     instance.delete()
-    return HttpResponse(status = status.HTTP_200_OK)
+    return HttpResponse(status=status.HTTP_200_OK)
+
 
 @api_view(['POST'])
 @permission_classes([])
 def deletePostComment(request):
     request = json.loads(request.body)
-    instance = PostComment.objects.get(user_id = request['user_id'], id = request['comment_id'])
+    instance = PostComment.objects.get(
+        user_id=request['user_id'], id=request['comment_id'])
     instance.delete()
-    return HttpResponse(status = status.HTTP_200_OK)
+    return HttpResponse(status=status.HTTP_200_OK)
+
 
 @api_view(['POST'])
 @permission_classes([])
 def deletePostCommentReply(request):
     request = json.loads(request.body)
-    instance = PostCommentReply.objects.get(user_id = request['user_id'], id = request['reply_id'])
+    instance = PostCommentReply.objects.get(
+        user_id=request['user_id'], id=request['reply_id'])
     instance.delete()
-    return HttpResponse(status = status.HTTP_200_OK)
+    return HttpResponse(status=status.HTTP_200_OK)
+
 
 @api_view(['POST'])
 @permission_classes([])
 def deleteQna(request):
     request = json.loads(request.body)
-    instance = Qna.objects.get(user_id = request['user_id'], id = request['qna_id'])
+    instance = Qna.objects.get(
+        user_id=request['user_id'], id=request['qna_id'])
     instance.delete()
-    return HttpResponse(status = status.HTTP_200_OK)
+    return HttpResponse(status=status.HTTP_200_OK)
+
 
 @api_view(['POST'])
 @permission_classes([])
 def deleteQnaAnswer(request):
     request = json.loads(request.body)
-    instance = QnaAnswer.objects.get(user_id = request['user_id'], id = request['answer_id'])
+    instance = QnaAnswer.objects.get(
+        user_id=request['user_id'], id=request['answer_id'])
     instance.delete()
-    return HttpResponse(status = status.HTTP_200_OK)
+    return HttpResponse(status=status.HTTP_200_OK)
+
 
 @api_view(['POST'])
 @permission_classes([])
 def deleteQnaAnswerComment(request):
     request = json.loads(request.body)
-    instance = QnaAnswerComment.objects.get(user_id = request['user_id'], id = request['comment_id'])
+    instance = QnaAnswerComment.objects.get(
+        user_id=request['user_id'], id=request['comment_id'])
     instance.delete()
-    return HttpResponse(status = status.HTTP_200_OK)
+    return HttpResponse(status=status.HTTP_200_OK)
+
 
 @api_view(['POST'])
 @permission_classes([])
 def deleteQnaAnswerCommentReply(request):
     request = json.loads(request.body)
-    instance = QnaAnswerCommentReply.objects.get(user_id = request['user_id'], id = request['reply_id'])
+    instance = QnaAnswerCommentReply.objects.get(
+        user_id=request['user_id'], id=request['reply_id'])
     instance.delete()
-    return HttpResponse(status = status.HTTP_200_OK)
+    return HttpResponse(status=status.HTTP_200_OK)

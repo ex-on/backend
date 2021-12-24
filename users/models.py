@@ -117,15 +117,6 @@ class UsersLikedPostCommentReplies(models.Model):
         managed = True
         db_table = 'users_liked_post_comment_replies'
 
-class UsersLikedQnaPosts(models.Model):
-    user = models.ForeignKey(User, on_delete = CASCADE)
-    qna_post = models.ForeignKey(
-        'community.Qna', on_delete = CASCADE)
-
-    class Meta:
-        managed = True
-        db_table = 'users_liked_qna_posts'
-
 class UsersLikedQnaAnswers(models.Model):
     user = models.ForeignKey(User, on_delete = CASCADE)
     qna_answer = models.ForeignKey('community.QnaAnswer', on_delete = CASCADE)
@@ -142,14 +133,6 @@ class UsersLikedQnaAnswerComments(models.Model):
         managed = True
         db_table = 'users_liked_qna_answer_comments'
 
-class UsersLikedQnaAnswerCommentReplies(models.Model):
-    user = models.ForeignKey(User, on_delete = CASCADE)
-    qna_answer_comment_reply = models.ForeignKey('community.QnaAnswerCommentReply', on_delete = CASCADE)
-
-    class Meta:
-        managed = True
-        db_table = 'users_liked_qna_answer_comment_replies'
-
 class UsersSavedPosts(models.Model):
     user = models.ForeignKey(User, on_delete = CASCADE)
     post = models.ForeignKey('community.Post', on_delete = CASCADE)
@@ -159,10 +142,10 @@ class UsersSavedPosts(models.Model):
         db_table = 'users_saved_posts'
 
 
-class UsersSavedQnaPosts(models.Model):
+class UsersSavedQnas(models.Model):
     user = models.ForeignKey(User, on_delete = CASCADE)
-    qna_post = models.ForeignKey('community.Qna', on_delete = CASCADE)
+    qna = models.ForeignKey('community.Qna', on_delete = CASCADE)
 
     class Meta:
         managed = True
-        db_table = 'users_saved_qna_posts'
+        db_table = 'users_saved_qnas'
