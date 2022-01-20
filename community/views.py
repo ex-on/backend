@@ -38,26 +38,27 @@ def timeCalculator(date_time):
 
 
 @api_view(['GET'])
-@permission_classes([])
+@permission_classes([IsAuthenticated])
 def getPostPreview(request):
-    type = int(request.GET['type'])
-    index_num = int(request.GET['index_num'])
-    index = (int(request.GET['page_num']) - 1) * index_num
-    if type == 0:
+    postType = int(request.GET['type'])
+    indexNum = int(request.GET['index_num'])
+    # startIndex = (int(request.GET['page_num']) - 1) * index_num
+    startIndex = int(request.GET['start_index'])
+    if postType == 0:
         posts = Post.objects.order_by(
-            '-creation_date')[index:index + index_num]
+            '-created_at')[startIndex:startIndex + indexNum]
     else:
-        posts = Post.objects.filter(type=type).order_by(
-            '-creation_date')[index:index + index_num]
+        posts = Post.objects.filter(type=postType).order_by(
+            '-created_at')[startIndex:startIndex + indexNum]
     return_data = []
     for post in posts:
         if len(post.content) > 70:
             post.content = post.content[0:70] + "..."
-        post.creation_date = timeCalculator(post.creation_date)
+        post.created_at = timeCalculator(post.created_at)
         preview = {
             "user_data": {
                 "username": User.objects.get(uuid=post.user_id).username,
-                "profile_icon": UserDetailsStatic.objects.get(user_id=post.user_id).profile_icon
+                "activity_level": UserDetailsStatic.objects.get(user_id=post.user_id).activity_level
             },
             "post_data": PostPreviewSerializer(post).data,
             "count": PostCountMiniSerializer(PostCount.objects.get(post_id=post.id)).data
@@ -69,20 +70,20 @@ def getPostPreview(request):
 @api_view(['GET'])
 @permission_classes([])
 def getHotPostPreview(request):
-    index_num = int(request.GET['index_num'])
-    index = (int(request.GET['page_num']) - 1) * index_num
+    indexNum = int(request.GET['index_num'])
+    startIndex = int(request.GET['start_index'])
     counts = PostCount.objects.filter(count_likes__gt=9).order_by(
-        '-creation_date')[index:index + index_num]
+        '-created_at')[startIndex:startIndex + indexNum]
     return_data = []
     for count in counts:
         post = Post.objects.get(id=count.post_id)
         if len(post.content) > 70:
             post.content = post.content[0:70] + "..."
-        post.creation_date = timeCalculator(post.creation_date)
+        post.created_at = timeCalculator(post.created_at)
         preview = {
             "user_data": {
                 "username": User.objects.get(uuid=post.user_id).username,
-                "profile_icon": UserDetailsStatic.objects.get(user_id=post.user_id).profile_icon
+                "activity_level": UserDetailsStatic.objects.get(user_id=post.user_id).activity_level
             },
             "post_data": PostPreviewSerializer(post).data,
             "count": PostCountMiniSerializer(PostCount.objects.get(post_id=post.id)).data
@@ -92,25 +93,25 @@ def getHotPostPreview(request):
 
 
 @api_view(['GET'])
-@permission_classes([])
+@permission_classes([IsAuthenticated])
 def getQnaPreview(request):
-    type = int(request.GET['type'])
-    index_num = int(request.GET['index_num'])
-    index = (int(request.GET['page_num']) - 1) * index_num
-    if type == 0:
-        qnas = Qna.objects.order_by('-creation_date')[index:index + 10]
+    qnaType = int(request.GET['type'])
+    indexNum = int(request.GET['index_num'])
+    startIndex = int(request.GET['start_index'])
+    if qnaType == 0:
+        qnas = Qna.objects.order_by('-created_at')[startIndex:startIndex + 10]
     else:
-        qnas = Qna.objects.filter(type=type).order_by(
-            '-creation_date')[index:index + index_num]
+        qnas = Qna.objects.filter(type=qnaType).order_by(
+            '-created_at')[startIndex:startIndex + indexNum]
     return_data = []
     for qna in qnas:
         if len(qna.content) > 70:
             qna.content = qna.content[0:70] + "..."
-        qna.creation_date = timeCalculator(qna.creation_date)
+        qna.created_at = timeCalculator(qna.created_at)
         preview = {
             "user_data": {
                 "username": User.objects.get(uuid=qna.user_id).username,
-                "profile_icon": UserDetailsStatic.objects.get(user_id=qna.user_id).profile_icon
+                "activity_level": UserDetailsStatic.objects.get(user_id=qna.user_id).activity_level
             },
             "qna_data": QnaPreviewSerializer(qna).data,
             "count": QnaCountMiniSerializer(QnaCount.objects.get(qna_id=qna.id)).data
@@ -122,20 +123,20 @@ def getQnaPreview(request):
 @api_view(['GET'])
 @permission_classes([])
 def getHotQnaPreview(request):
-    index_num = int(request.GET['index_num'])
-    index = (int(request.GET['page_num']) - 1) * index_num
+    indexNum = int(request.GET['index_num'])
+    startIndex = int(request.GET['start_index'])
     counts = QnaCount.objects.filter(count_likes__gt=9).order_by(
-        '-creation_date')[index:index + index_num]
+        '-created_at')[startIndex:startIndex + indexNum]
     return_data = []
     for count in counts:
         qna = Qna.objects.get(id=count.qna_id)
         if len(qna.content) > 70:
             qna.content = qna.content[0:70] + "..."
-        qna.creation_date = timeCalculator(qna.creation_date)
+        qna.created_at = timeCalculator(qna.created_at)
         preview = {
             "user_data": {
                 "username": User.objects.get(uuid=qna.user_id).username,
-                "profile_icon": UserDetailsStatic.objects.get(user_id=qna.user_id).profile_icon
+                "activity_level": UserDetailsStatic.objects.get(user_id=qna.user_id).activity_level
             },
             "qna_data": QnaPreviewSerializer(qna).data,
             "count": QnaCountMiniSerializer(QnaCount.objects.get(qna_id=qna.id)).data
@@ -149,16 +150,16 @@ def getHotQnaPreview(request):
 def getQnaMainSolved(request):
     index = (int(request.GET['page_num']) - 1) * 10
     qnas = Qna.objects.filter(solved=True).order_by(
-        '-creation_date')[index:index + 10]
+        '-created_at')[index:index + 10]
     return_data = []
     for qna in qnas:
         if len(qna.content) > 70:
             qna.content = qna.content[0:70] + "..."
-        qna.creation_date = timeCalculator(qna.creation_date)
+        qna.created_at = timeCalculator(qna.created_at)
         preview = {
             "user_data": {
                 "username": User.objects.get(uuid=qna.user_id).username,
-                "profile_icon": UserDetailsStatic.objects.get(user_id=qna.user_id).profile_icon
+                "activity_level": UserDetailsStatic.objects.get(user_id=qna.user_id).activity_level
             },
             "post_data": QnaPreviewSerializer(qna).data,
             "count": QnaCountMiniSerializer(QnaCount.objects.get(qna_id=qna.id)).data
@@ -172,16 +173,16 @@ def getQnaMainSolved(request):
 def getQnaMainUnsolved(request):
     index = (int(request.GET['page_num']) - 1) * 10
     qnas = Qna.objects.filter(solved=False).order_by(
-        '-creation_date')[index:index + 10]
+        '-created_at')[index:index + 10]
     return_data = []
     for qna in qnas:
         if len(qna.content) > 70:
             qna.content = qna.content[0:70] + "..."
-        qna.creation_date = timeCalculator(qna.creation_date)
+        qna.created_at = timeCalculator(qna.created_at)
         preview = {
             "user_data": {
                 "username": User.objects.get(uuid=qna.user_id).username,
-                "profile_icon": UserDetailsStatic.objects.get(user_id=qna.user_id).profile_icon
+                "activity_level": UserDetailsStatic.objects.get(user_id=qna.user_id).activity_level
             },
             "post_data": QnaPreviewSerializer(qna).data,
             "count": QnaCountMiniSerializer(QnaCount.objects.get(qna_id=qna.id)).data
@@ -196,16 +197,16 @@ def getQnaMainType(request):
     type = int(request.GET['type'])
     index = (int(request.GET['page_num']) - 1) * 10
     qnas = Qna.objects.filter(type=type).order_by(
-        '-creation_date')[index:index + 10]
+        '-created_at')[index:index + 10]
     return_data = []
     for qna in qnas:
         if len(qna.content) > 70:
             qna.content = qna.content[0:70] + "..."
-        qna.creation_date = timeCalculator(qna.creation_date)
+        qna.created_at = timeCalculator(qna.created_at)
         preview = {
             "user_data": {
                 "username": User.objects.get(uuid=qna.user_id).username,
-                "profile_icon": UserDetailsStatic.objects.get(user_id=qna.user_id).profile_icon
+                "activity_level": UserDetailsStatic.objects.get(user_id=qna.user_id).activity_level
             },
             "post_data": QnaPreviewSerializer(qna).data,
             "count": QnaCountMiniSerializer(QnaCount.objects.get(qna_id=qna.id)).data
@@ -222,14 +223,14 @@ def getUserRecentPostQna(request):
     else:
         user_id = request.user.uuid
     posts = Post.objects.filter(
-        user_id=user_id).order_by('-creation_date')[0:8]
+        user_id=user_id).order_by('-created_at')[0:8]
     answers = QnaAnswer.objects.filter(
-        user_id=user_id).order_by('-creation_date')[0:8]
+        user_id=user_id).order_by('-created_at')[0:8]
     post_preview, qna_preview = [], []
     for post in posts:
         if len(post.content) > 70:
             post.content = post.content[0:70] + "..."
-        post.creation_date = timeCalculator(post.creation_date)
+        post.created_at = timeCalculator(post.created_at)
         data = {
             "post_data": PostPreviewSerializer(post).data,
             "count": PostCountMiniSerializer(PostCount.objects.get(post_id=post.id)).data
@@ -243,7 +244,7 @@ def getUserRecentPostQna(request):
             "qna_data": {
                 "qna_title": qna.title,
                 "answer_content": answer.content,
-                "creation_date": timeCalculator(answer.creation_date),
+                "created_at": timeCalculator(answer.created_at),
                 "id": qna.id,
                 "type": qna.type
             },
@@ -269,7 +270,7 @@ def getPost(request):
     data = {
         "user_data": {
             "username": User.objects.get(uuid=post.user_id).username,
-            "profile_icon": UserDetailsStatic.objects.get(user_id=post.user_id).profile_icon
+            "activity_level": UserDetailsStatic.objects.get(user_id=post.user_id).activity_level
         },
         "post": PostSerializer(post).data,
     }
@@ -282,7 +283,7 @@ def getPostComments(request):
     uuid = request.user.uuid
     post_id = request.GET['post_id']
     comments = PostComment.objects.filter(
-        post_id=post_id).order_by('creation_date')
+        post_id=post_id).order_by('created_at')
     replies = PostCommentReply.objects.filter(post_id=post_id)
     totalDataList = []
     for comment in comments:
@@ -292,7 +293,7 @@ def getPostComments(request):
             replyData = {
                 "user_data": {
                     "username": User.objects.get(uuid=reply.user_id).username,
-                    "profile_icon": UserDetailsStatic.objects.get(user_id=reply.user_id).profile_icon
+                    "activity_level": UserDetailsStatic.objects.get(user_id=reply.user_id).activity_level
                 },
                 "reply_data": PostCommentReplySerializer(reply).data,
                 "reply_count": PostCommentReplyCountSerializer(PostCommentReplyCount.objects.get(post_comment_reply_id=reply.id)).data,
@@ -303,7 +304,7 @@ def getPostComments(request):
             "comments": {
                 "user_data": {
                     "username": User.objects.get(uuid=comment.user_id).username,
-                    "profile_icon": UserDetailsStatic.objects.get(user_id=comment.user_id).profile_icon
+                    "activity_level": UserDetailsStatic.objects.get(user_id=comment.user_id).activity_level
                 },
                 "comment_data": PostCommentSerializer(comment).data,
                 "comment_count": PostCommentCountSerializer(PostCommentCount.objects.get(post_comment_id=comment.id)).data,
@@ -323,7 +324,7 @@ def getQna(request):
     data = {
         "user_data": {
             "username": User.objects.get(uuid=qna.user_id).username,
-            "profile_icon": UserDetailsStatic.objects.get(user_id=qna.user_id).profile_icon
+            "activity_level": UserDetailsStatic.objects.get(user_id=qna.user_id).activity_level
         },
         "qna": QnaSerializer(qna).data,
     }
@@ -341,7 +342,7 @@ def getQnaAnswers(request):
         dataList.append({
             "user_data": {
                 "username": User.objects.get(uuid=answer.user_id).username,
-                "profile_icon": UserDetailsStatic.objects.get(user_id=answer.user_id).profile_icon
+                "activity_level": UserDetailsStatic.objects.get(user_id=answer.user_id).activity_level
             },
             "answer_data": QnaAnswerSerializer(answer).data,
             "answer_count": QnaAnswerCountSerializer(QnaAnswerCount.objects.get(qna_answer_id=answer.id)).data,
@@ -365,7 +366,7 @@ def getQnaAnswerComments(request):
             replyData = {
                 "user_data": {
                     "username": User.objects.get(uuid=reply.user_id).username,
-                    "profile_icon": UserDetailsStatic.objects.get(user_id=reply.user_id).profile_icon
+                    "activity_level": UserDetailsStatic.objects.get(user_id=reply.user_id).activity_level
                 },
                 "reply_data": QnaAnswerCommentReplySerializer(reply).data,
             }
@@ -374,7 +375,7 @@ def getQnaAnswerComments(request):
             "comment": {
                 "user_data": {
                     "username": User.objects.get(uuid=comment.user_id).username,
-                    "profile_icon": UserDetailsStatic.objects.get(user_id=comment.user_id).profile_icon
+                    "activity_level": UserDetailsStatic.objects.get(user_id=comment.user_id).activity_level
                 },
                 "comment_data": QnaAnswerCommentSerializer(comment).data,
                 "comment_count": QnaAnswerCommentCountSerializer(QnaAnswerCommentCount.objects.get(qna_answer_comment_id=comment.id)).data,
@@ -403,15 +404,15 @@ def getQnaUserStatus(request):
 
 
 @api_view(['POST'])
-@permission_classes([])
+@permission_classes([IsAuthenticated])
 def postPost(request):
+    uuid = request.user.uuid
     request = json.loads(request.body)
-    post_instance = Post(user_id=request['user_id'], creation_date=request['creation_date'],
-                         title=request['title'], content=request['content'], modified=False, type=request['type'])
-    post_instance.save()
-    count_instance = PostCount(
-        post_id=post_instance.id, creation_date=request['creation_date'], count_likes=0, count_comments=0, count_saved=0, count_reports=0)
-    count_instance.save()
+    post = Post(user_id=uuid, title=request['title'], content=request['content'], modified=False, type=request['type'])
+    post.save()
+    postCount = PostCount(
+        post_id=post.id, count_likes=0, count_comments=0, count_saved=0, count_reports=0)
+    postCount.save()
     return HttpResponse(status=200)
 
 
@@ -426,9 +427,9 @@ def postPostComment(request):
     count_instance = PostCommentCount(
         post_comment_id=comment_instance.id, count_likes=0, count_reports=0)
     count_instance.save()
-    post_count = PostCount.objects.get(post_id=data['post_id'])
-    post_count.count_comments += 1
-    post_count.save()
+    postCount = PostCount.objects.get(post_id=data['post_id'])
+    postCount.count_comments += 1
+    postCount.save()
     return HttpResponse(status=200)
 
 
@@ -443,35 +444,37 @@ def postPostCommentReply(request):
     count_instance = PostCommentReplyCount(
         post_comment_reply_id=reply_instance.id,)
     count_instance.save()
-    post_count = PostCount.objects.get(post_id=data['post_id'])
-    post_count.count_comments += 1
-    post_count.save()
+    postCount = PostCount.objects.get(post_id=data['post_id'])
+    postCount.count_comments += 1
+    postCount.save()
     return HttpResponse(status=200)
 
 
 @api_view(['POST'])
-@permission_classes([])
+@permission_classes([IsAuthenticated])
 def postQna(request):
+    uuid = request.user.uuid
     request = json.loads(request.body)
-    qna_instance = Qna(user_id=request['user_id'], title=request['title'], content=request['content'],
-                       creation_date=request['creation_date'], modified=False, solved=False, type=request['type'])
-    qna_instance.save()
-    count_instance = QnaCount(qna_id=qna_instance.id, creation_date=request['creation_date'],
-                              count_likes=0, count_answers=0, count_saved=0, count_total_comments=0, count_reports=0)
-    count_instance.save()
+    qna = Qna(user_id=uuid, title=request['title'], content=request['content'],
+                     modified=False, solved=False, type=request['type'])
+    qna.save()
+    qnaCount = QnaCount(qna_id=qna.id,
+                              count_likes=0, count_answers=0, count_saved=0, count_comments=0, count_reports=0)
+    qnaCount.save()
     return HttpResponse(status=200)
 
 
 @api_view(['POST'])
-@permission_classes([])
+@permission_classes([IsAuthenticated])
 def postQnaAnswer(request):
+    uuid = request.user.uuid
     request = json.loads(request.body)
-    answer_instance = QnaAnswer(user_id=request['user_id'], qna_id=request['qna_id'],
-                                content=request['content'], creation_date=request['creation_date'])
-    answer_instance.save()
-    count_instance = QnaAnswerCount(
-        qna_answer_id=answer_instance.id, count_likes=0, count_comments=0, count_reports=0)
-    count_instance.save()
+    answer = QnaAnswer(user_id=uuid, qna_id=request['qna_id'],
+                                content=request['content'])
+    answer.save()
+    answerCount = QnaAnswerCount(
+        qna_answer_id=answer.id, count_likes=0, count_comments=0, count_reports=0)
+    answerCount.save()
     return HttpResponse(status=200)
 
 
@@ -486,6 +489,9 @@ def postQnaAnswerComment(request):
     commentCount = QnaAnswerCommentCount(
         qna_answer_comment_id=comment.id, count_likes=0, count_reports=0)
     commentCount.save()
+    answerCount = QnaAnswerCount.objects.get(qna_answer_id=request['answer_id'])
+    answerCount.count_comments += 1
+    answerCount.save()
     return HttpResponse(status=200)
 
 
@@ -497,6 +503,9 @@ def postQnaAnswerCommentReply(request):
     reply = QnaAnswerCommentReply(user_id=uuid, qna_answer_id=request['answer_id'],
                                   qna_answer_comment_id=request['qna_answer_comment_id'], content=request['content'])
     reply.save()
+    answerCount = QnaAnswerCount.objects.get(qna_answer_id=request['answer_id'])
+    answerCount.count_comments += 1
+    answerCount.save()
     return HttpResponse(status=200)
 
 ############ 게시물 수정 #######################
@@ -799,17 +808,17 @@ def getSavedPostQnaPreview(request):
         data = Qna.objects.filter(id=userSavedQna.qna_id)
         qnas = qnas.union(data)
     userSaved = sorted(chain(posts, qnas), key=attrgetter(
-        'creation_date'), reverse=True)
+        'created_at'), reverse=True)
     savedData = []
     for data in userSaved:
         if isinstance(data, Post):
             if len(data.content) > 70:
                 data.content = data.content[0:70] + "..."
-            data.creation_date = timeCalculator(data.creation_date)
+            data.created_at = timeCalculator(data.created_at)
             preview = {
                 "user_data": {
                     "username": User.objects.get(uuid=data.user_id).username,
-                    "profile_icon": UserDetailsStatic.objects.get(user_id=data.user_id).profile_icon
+                    "activity_level": UserDetailsStatic.objects.get(user_id=data.user_id).activity_level
                 },
                 "post_data": PostPreviewSerializer(data).data,
                 "count": PostCountMiniSerializer(PostCount.objects.get(post_id=data.id)).data
@@ -818,11 +827,11 @@ def getSavedPostQnaPreview(request):
         else:
             if len(data.content) > 70:
                 data.content = data.content[0:70] + "..."
-            data.creation_date = timeCalculator(data.creation_date)
+            data.created_at = timeCalculator(data.created_at)
             preview = {
                 "user_data": {
                     "username": User.objects.get(uuid=data.user_id).username,
-                    "profile_icon": UserDetailsStatic.objects.get(user_id=data.user_id).profile_icon
+                    "activity_level": UserDetailsStatic.objects.get(user_id=data.user_id).activity_level
                 },
                 "qna_data": QnaPreviewSerializer(data).data,
                 "count": QnaCountMiniSerializer(QnaCount.objects.get(qna_id=data.id)).data

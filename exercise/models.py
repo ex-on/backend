@@ -13,7 +13,7 @@ class Exercise(models.Model):
 
 
 class ExerciseDetails(models.Model):
-    exercise = models.ForeignKey(Exercise, models.DO_NOTHING)
+    exercise = models.ForeignKey(Exercise, on_delete=models.CASCADE)
     recommended_duration = models.IntegerField()
     info_text = models.CharField(max_length=500)
 
@@ -23,11 +23,12 @@ class ExerciseDetails(models.Model):
 
 
 class ExercisePlanAerobic(models.Model):
-    user = models.ForeignKey('users.User', models.DO_NOTHING)
-    exercise = models.ForeignKey(Exercise, models.DO_NOTHING)
+    user = models.ForeignKey('users.User', on_delete=models.CASCADE)
+    exercise = models.ForeignKey(Exercise, on_delete=models.CASCADE)
     date = models.DateField()
     target_distance = models.FloatField()
     target_duration = models.TimeField()
+    completed = models.BooleanField(default=False)
 
     class Meta:
         managed = True
@@ -35,11 +36,11 @@ class ExercisePlanAerobic(models.Model):
 
 
 class ExercisePlanWeight(models.Model):
-    user = models.ForeignKey('users.User', models.DO_NOTHING)
-    exercise = models.ForeignKey(Exercise, models.DO_NOTHING)
+    user = models.ForeignKey('users.User', on_delete=models.CASCADE)
+    exercise = models.ForeignKey(Exercise, on_delete=models.CASCADE)
     date = models.DateField(auto_now_add=True)
     num_sets = models.IntegerField(blank=True, null=True)
-
+    completed = models.BooleanField(default=False)
     class Meta:
         managed = True
         db_table = 'exercise_plan_weight'
@@ -47,7 +48,7 @@ class ExercisePlanWeight(models.Model):
 
 class ExercisePlanWeightSet(models.Model):
     exercise_plan_weight = models.ForeignKey(
-        ExercisePlanWeight, models.DO_NOTHING)
+        ExercisePlanWeight, on_delete=models.CASCADE)
     set_num = models.IntegerField()
     target_weight = models.FloatField()
     target_reps = models.IntegerField()
@@ -58,12 +59,12 @@ class ExercisePlanWeightSet(models.Model):
 
 
 class ExerciseRecordAerobic(models.Model):
-    user = models.ForeignKey('users.User', models.DO_NOTHING)
+    user = models.ForeignKey('users.User', on_delete=models.CASCADE)
     exercise_plan_aerobic = models.ForeignKey(
-        ExercisePlanAerobic, models.DO_NOTHING)
+        ExercisePlanAerobic, on_delete=models.CASCADE)
     record_distance = models.FloatField()
     record_duration = models.FloatField()
-    date = models.DateField()
+    date = models.DateField(auto_now_add=True)
     start_time = models.DateTimeField()
     end_time = models.DateTimeField(blank=True, null=True)
 
@@ -74,7 +75,7 @@ class ExerciseRecordAerobic(models.Model):
 
 class ExerciseRecordAerobicRest(models.Model):
     exercise_record_aerobic = models.ForeignKey(
-        ExerciseRecordAerobic, models.DO_NOTHING)
+        ExerciseRecordAerobic, on_delete=models.CASCADE)
     start_time = models.IntegerField()
     end_time = models.IntegerField(blank=True, null=True)
 
@@ -84,14 +85,16 @@ class ExerciseRecordAerobicRest(models.Model):
 
 
 class ExerciseRecordWeight(models.Model):
-    user = models.ForeignKey('users.User', models.DO_NOTHING)
-    exercise = models.ForeignKey(Exercise, models.DO_NOTHING)
+    user = models.ForeignKey('users.User', on_delete=models.CASCADE)
+    exercise = models.ForeignKey(Exercise, on_delete=models.CASCADE)
     exercise_plan_weight = models.ForeignKey(
-        ExercisePlanWeight, models.DO_NOTHING)
+        ExercisePlanWeight, on_delete=models.CASCADE)
     total_sets = models.IntegerField()
-    date = models.DateField()
+    date = models.DateField(auto_now_add=True)
     start_time = models.DateTimeField()
     end_time = models.DateTimeField()
+    total_volume = models.FloatField()
+    max_one_rm = models.FloatField()
 
     class Meta:
         managed = True
@@ -100,12 +103,13 @@ class ExerciseRecordWeight(models.Model):
 
 class ExerciseRecordWeightSet(models.Model):
     exercise_record_weight = models.ForeignKey(
-        ExerciseRecordWeight, models.DO_NOTHING)
+        ExerciseRecordWeight, on_delete=models.CASCADE)
     record_weight = models.FloatField()
     record_reps = models.IntegerField()
     start_time = models.DateTimeField()
     end_time = models.DateTimeField()
     set_num = models.IntegerField(blank=True, null=True)
+    one_rm = models.FloatField()
 
     class Meta:
         managed = True

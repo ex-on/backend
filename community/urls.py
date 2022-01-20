@@ -23,7 +23,7 @@ urlpatterns = [
     path('postcomment', postPostComment),
     path('postcommentreply', postPostCommentReply),
     path('qna', postQna),
-    path('qnaanswer', postQnaAnswer),
+    path('qna_answer', postQnaAnswer),
     path('qna_answer_comment', postQnaAnswerComment),
     path('qna_answer_comment_reply', postQnaAnswerCommentReply),
     ########게시물 수정###############

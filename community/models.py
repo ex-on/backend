@@ -3,14 +3,15 @@ from django.db.models.deletion import CASCADE, DO_NOTHING
 from django.db.models.fields import DateTimeField
 from django.db.models.fields.related import ForeignKey
 
+from core.models import AbstractBaseModel
+
 # Create your models here.
 
-class Post(models.Model):
-    user = models.ForeignKey('users.User', models.DO_NOTHING)
-    creation_date = models.DateTimeField()
+class Post(AbstractBaseModel):
+    user = models.ForeignKey('users.User', on_delete=CASCADE)
     title = models.CharField(max_length=30)
     content = models.CharField(max_length=500)
-    modified = models.BooleanField()
+    modified = models.BooleanField(default=False)
     type = models.IntegerField()
 
     class Meta:
@@ -18,11 +19,10 @@ class Post(models.Model):
         db_table = 'post'
 
 
-class PostComment(models.Model):
-    user = models.ForeignKey('users.User', models.DO_NOTHING)
+class PostComment(AbstractBaseModel):
+    user = models.ForeignKey('users.User', on_delete=CASCADE)
     post = models.ForeignKey(Post, on_delete=CASCADE)
     content = models.CharField(max_length=100)
-    creation_date = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         managed = True
@@ -44,7 +44,7 @@ class PostCommentReply(models.Model):
     post = models.ForeignKey(Post, on_delete = CASCADE)
     post_comment = models.ForeignKey(PostComment, on_delete = CASCADE)
     content = models.CharField(max_length=100)
-    creation_date = models.DateTimeField(auto_now_add=True)
+    created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         managed = True
@@ -53,7 +53,7 @@ class PostCommentReply(models.Model):
 
 class PostCount(models.Model):
     post = models.OneToOneField(Post, on_delete=CASCADE)
-    creation_date = models.DateTimeField()
+    created_at = models.DateTimeField(auto_now_add=True)
     count_likes = models.IntegerField()
     count_comments = models.IntegerField(default=0)
     count_saved = models.IntegerField(default=0)
@@ -74,12 +74,11 @@ class PostCommentReplyCount(models.Model):
         db_table = 'post_comment_reply_count'
 
 
-class Qna(models.Model):
-    user = models.ForeignKey('users.User', models.DO_NOTHING)
+class Qna(AbstractBaseModel):
+    user = models.ForeignKey('users.User', on_delete=CASCADE)
     title = models.CharField(max_length=30)
     content = models.CharField(max_length=500)
-    creation_date = models.DateTimeField()
-    modified = models.BooleanField()
+    modified = models.BooleanField(default=False)
     solved = models.BooleanField()
     type = models.IntegerField(default=1)
 
@@ -88,22 +87,20 @@ class Qna(models.Model):
         db_table = 'qna'
 
 
-class QnaAnswer(models.Model):
-    user = models.ForeignKey('users.User', models.DO_NOTHING)
-    qna = models.ForeignKey(Qna, models.DO_NOTHING)
+class QnaAnswer(AbstractBaseModel):
+    user = models.ForeignKey('users.User', on_delete=CASCADE)
+    qna = models.ForeignKey(Qna, on_delete=CASCADE)
     content = models.CharField(max_length=500)
-    creation_date = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         managed = True
         db_table = 'qna_answer'
 
 
-class QnaAnswerComment(models.Model):
-    qna_answer = models.ForeignKey(QnaAnswer, models.DO_NOTHING)
-    user = models.ForeignKey('users.User', models.DO_NOTHING)
+class QnaAnswerComment(AbstractBaseModel):
+    qna_answer = models.ForeignKey(QnaAnswer, on_delete=CASCADE)
+    user = models.ForeignKey('users.User', on_delete=CASCADE)
     content = models.CharField(max_length=100)
-    creation_date = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         managed = True
@@ -111,11 +108,11 @@ class QnaAnswerComment(models.Model):
 
 
 class QnaAnswerCommentReply(models.Model):
-    qna_answer = models.ForeignKey(QnaAnswer, models.DO_NOTHING)
-    qna_answer_comment = models.ForeignKey(QnaAnswerComment, models.DO_NOTHING)
-    user = models.ForeignKey('users.User', models.DO_NOTHING)
+    qna_answer = models.ForeignKey(QnaAnswer, on_delete=CASCADE)
+    qna_answer_comment = models.ForeignKey(QnaAnswerComment, on_delete=CASCADE)
+    user = models.ForeignKey('users.User', on_delete=CASCADE)
     content = models.CharField(max_length=100)
-    creation_date = models.DateTimeField(auto_now_add=True)
+    created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         managed = True
@@ -123,10 +120,10 @@ class QnaAnswerCommentReply(models.Model):
 
 
 class QnaPreview(models.Model):
-    user = models.ForeignKey('users.User', models.DO_NOTHING)
-    post = models.ForeignKey(Qna, models.DO_NOTHING)
+    user = models.ForeignKey('users.User', on_delete=CASCADE)
+    post = models.ForeignKey(Qna, on_delete=CASCADE)
     title = models.CharField(max_length=30)
-    creation_date = models.DateTimeField()
+    created_at = models.DateTimeField()
     solved = models.BooleanField()
     type = models.IntegerField()
 
@@ -136,8 +133,8 @@ class QnaPreview(models.Model):
 
 
 class QnaCount(models.Model):
-    qna = models.ForeignKey(Qna, models.DO_NOTHING)
-    creation_date = models.DateTimeField()
+    qna = models.ForeignKey(Qna, on_delete=CASCADE)
+    created_at = models.DateTimeField(auto_now_add=True)
     count_likes = models.IntegerField()
     count_answers = models.IntegerField()
     count_saved = models.IntegerField()
@@ -150,7 +147,7 @@ class QnaCount(models.Model):
 
 
 class QnaAnswerCount(models.Model):
-    qna_answer = models.ForeignKey(QnaAnswer, models.DO_NOTHING)
+    qna_answer = models.ForeignKey(QnaAnswer, on_delete=CASCADE)
     count_likes = models.IntegerField()
     count_comments = models.IntegerField()
     count_reports = models.IntegerField()
@@ -160,7 +157,7 @@ class QnaAnswerCount(models.Model):
         db_table = 'qna_answer_count'
 
 class QnaAnswerCommentCount(models.Model):
-    qna_answer_comment = models.ForeignKey(QnaAnswerComment, models.DO_NOTHING)
+    qna_answer_comment = models.ForeignKey(QnaAnswerComment, on_delete=CASCADE)
     count_likes = models.IntegerField()
     count_reports = models.IntegerField()
 
@@ -169,9 +166,9 @@ class QnaAnswerCommentCount(models.Model):
         db_table = 'qna_answer_comment_count'
 
 class UsersReportedPosts(models.Model):
-    user = models.ForeignKey('users.User', models.DO_NOTHING)
+    user = models.ForeignKey('users.User', on_delete=CASCADE)
     post = models.ForeignKey(Post, on_delete = CASCADE)
-    creation_date = DateTimeField(auto_now_add = True)
+    created_at = DateTimeField(auto_now_add = True)
     
     class Meta:
         unique_together = (('user', 'post'), )
@@ -179,52 +176,52 @@ class UsersReportedPosts(models.Model):
         db_table = 'users_reported_posts'
     
 class UsersReportedPostComments(models.Model):
-    user = models.ForeignKey('users.User', models.DO_NOTHING)
+    user = models.ForeignKey('users.User', on_delete=CASCADE)
     comment = models.ForeignKey(PostComment, on_delete = CASCADE)
-    creation_date = DateTimeField(auto_now_add = True)
+    created_at = DateTimeField(auto_now_add = True)
     
     class Meta:
         unique_together = (('user', 'comment'), )
         managed = True
         db_table = 'users_reported_post_comments'
 class UsersReportedPostCommentReplies(models.Model):
-    user = models.ForeignKey('users.User', models.DO_NOTHING)
+    user = models.ForeignKey('users.User', on_delete=CASCADE)
     reply = models.ForeignKey(PostCommentReply, on_delete = CASCADE)
-    creation_date = DateTimeField(auto_now_add = True)
+    created_at = DateTimeField(auto_now_add = True)
     
     class Meta:
         unique_together = (('user', 'reply'), )
         managed = True
         db_table = 'users_reported_post_comment_replies'
 class UsersReportedQnas(models.Model):
-    user = models.ForeignKey('users.User', models.DO_NOTHING)
+    user = models.ForeignKey('users.User', on_delete=CASCADE)
     qna = models.ForeignKey(Qna, on_delete = CASCADE)
-    creation_date = DateTimeField(auto_now_add = True)
+    created_at = DateTimeField(auto_now_add = True)
     
     class Meta:
         unique_together = (('user', 'qna'), )
         managed = True
         db_table = 'users_reported_qna'
 class UsersReportedQnaAnswers(models.Model):
-    user = models.ForeignKey('users.User', models.DO_NOTHING)
+    user = models.ForeignKey('users.User', on_delete=CASCADE)
     answer = models.ForeignKey(QnaAnswer, on_delete = CASCADE)
-    creation_date = DateTimeField(auto_now_add = True)
+    created_at = DateTimeField(auto_now_add = True)
     class Meta:
         unique_together = (('user', 'answer'), )
         managed = True
         db_table = 'users_reported_qna_answer'    
 class UsersReportedQnaAnswerComments(models.Model):
-    user = models.ForeignKey('users.User', models.DO_NOTHING)
+    user = models.ForeignKey('users.User', on_delete=CASCADE)
     comment = models.ForeignKey(QnaAnswerComment, on_delete = CASCADE)
-    creation_date = DateTimeField(auto_now_add = True)
+    created_at = DateTimeField(auto_now_add = True)
     class Meta:
         unique_together = (('user', 'comment'), )
         managed = True
         db_table = 'users_reported_qna_answer_comments'
 class UsersReportedQnaAnswerCommentReplies(models.Model):
-    user = models.ForeignKey('users.User', models.DO_NOTHING)
+    user = models.ForeignKey('users.User', on_delete=CASCADE)
     reply = models.ForeignKey(QnaAnswerCommentReply, on_delete = CASCADE)
-    creation_date = DateTimeField(auto_now_add = True)
+    created_at = DateTimeField(auto_now_add = True)
     class Meta:
         unique_together = (('user', 'reply'), )
         managed = True

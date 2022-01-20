@@ -13,7 +13,7 @@ class PostSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Post
-        fields = ("title", "content", "creation_date", "modified")
+        fields = ("title", "content", "created_at", "modified")
 
 
 class PostCountSerializer(serializers.ModelSerializer):
@@ -31,7 +31,7 @@ class PostCountMiniSerializer(serializers.ModelSerializer):
 class PostCommentSerializer(serializers.ModelSerializer):
     class Meta:
         model = PostComment
-        fields = ("content", "creation_date", "id")
+        fields = ("content", "created_at", "id")
 
 
 class PostCommentCountSerializer(serializers.ModelSerializer):
@@ -43,13 +43,13 @@ class PostCommentCountSerializer(serializers.ModelSerializer):
 class PostCommentReplySerializer(serializers.ModelSerializer):
     class Meta:
         model = PostCommentReply
-        fields = ('id', "content", "creation_date")
+        fields = ('id', "content", "created_at")
 
 
 class PostCommentReplyCountSerializer(serializers.ModelSerializer):
     class Meta:
         model = PostCommentReplyCount
-        fields = ("count_likes")
+        fields = ("count_likes",)
 
 
 class UserNameSerializer(serializers.ModelSerializer):
@@ -67,7 +67,7 @@ class UserProfileSerializer(serializers.ModelSerializer):
 class PostPreviewSerializer(serializers.ModelSerializer):
     class Meta:
         model = Post
-        fields = ('id', 'title', 'content', 'creation_date', 'type')
+        fields = ('id', 'title', 'content', 'created_at', 'type')
 
 
 class PostViewSerializer(serializers.Serializer):
@@ -94,7 +94,7 @@ class PostCommentReplyViewSerializer(serializers.Serializer):
 class QnaSerializer(serializers.ModelSerializer):
     class Meta:
         model = Qna
-        fields = ("title", "content", "creation_date", "modified")
+        fields = ("title", "content", "created_at", "modified")
 
 
 class QnaCountSerializer(serializers.ModelSerializer):
@@ -106,7 +106,7 @@ class QnaCountSerializer(serializers.ModelSerializer):
 class QnaAnswerSerializer(serializers.ModelSerializer):
     class Meta:
         model = QnaAnswer
-        fields = ("content", "creation_date", "id")
+        fields = ("content", "created_at", "id")
 
 
 class QnaAnswerCountSerializer(serializers.ModelSerializer):
@@ -118,23 +118,25 @@ class QnaAnswerCountSerializer(serializers.ModelSerializer):
 class QnaAnswerCommentSerializer(serializers.ModelSerializer):
     class Meta:
         model = QnaAnswerComment
-        fields = ("id", "content", "creation_date")
+        fields = ("id", "content", "created_at")
+
 
 class QnaAnswerCommentCountSerializer(serializers.ModelSerializer):
     class Meta:
         model = QnaAnswerCommentCount
         fields = ("count_likes",)
 
+
 class QnaAnswerCommentReplySerializer(serializers.ModelSerializer):
     class Meta:
         model = QnaAnswerCommentReply
-        fields = ("content", "creation_date")
+        fields = ("content", "created_at")
 
 
 class QnaPreviewSerializer(serializers.ModelSerializer):
     class Meta:
         model = Qna
-        fields = ("id", "title", "content", "creation_date", 'type')
+        fields = ("id", "title", "content", "created_at", 'type')
 
 
 class QnaCountMiniSerializer(serializers.ModelSerializer):

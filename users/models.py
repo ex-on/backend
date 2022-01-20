@@ -72,7 +72,6 @@ class UserDetailsStatic(models.Model):
     activity_level = models.IntegerField(default=0)
     physical_level = models.IntegerField(blank=True, null=True)
     intro_text = models.CharField(max_length=30, blank=True, null=True)
-    profile_icon = models.IntegerField(default=0)
 
     class Meta:
         managed = True
