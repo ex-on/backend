@@ -47,7 +47,7 @@ def getUserInfo(request):
     uuid = request.user.uuid
     userInfo = {
         'username': User.objects.get(uuid=uuid).username,
-        'profile_icon': UserDetailsStatic.objects.get(user_id=uuid).profile_icon,
+        'activity_level': UserDetailsStatic.objects.get(user_id=uuid).activity_level,
         'created_at': User.objects.get(uuid=uuid).created_at
     }
     return Response(userInfo)
