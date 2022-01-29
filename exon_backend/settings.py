@@ -69,10 +69,11 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'rest_framework',
     'users.apps.UsersConfig',
     'exercise.apps.ExerciseConfig',
     'community.apps.CommunityConfig',
-    'rest_framework',
+    'stats.apps.StatsConfig',
     'core.apps.CoreConfig',
 ]
 

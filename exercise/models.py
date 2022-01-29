@@ -4,7 +4,8 @@ from django.db import models
 
 class Exercise(models.Model):
     name = models.CharField(max_length=20)
-    target_muscle = models.IntegerField()
+    type = models.IntegerField()
+    target_muscle = models.IntegerField(null=True)
     exercise_method = models.IntegerField()
 
     class Meta:
@@ -22,7 +23,7 @@ class ExerciseDetails(models.Model):
         db_table = 'exercise_details'
 
 
-class ExercisePlanAerobic(models.Model):
+class ExercisePlanCardio(models.Model):
     user = models.ForeignKey('users.User', on_delete=models.CASCADE)
     exercise = models.ForeignKey(Exercise, on_delete=models.CASCADE)
     date = models.DateField()
@@ -32,7 +33,7 @@ class ExercisePlanAerobic(models.Model):
 
     class Meta:
         managed = True
-        db_table = 'exercise_plan_aerobic'
+        db_table = 'exercise_plan_cardio'
 
 
 class ExercisePlanWeight(models.Model):
@@ -41,6 +42,7 @@ class ExercisePlanWeight(models.Model):
     date = models.DateField(auto_now_add=True)
     num_sets = models.IntegerField(blank=True, null=True)
     completed = models.BooleanField(default=False)
+
     class Meta:
         managed = True
         db_table = 'exercise_plan_weight'
@@ -58,10 +60,11 @@ class ExercisePlanWeightSet(models.Model):
         db_table = 'exercise_plan_weight_set'
 
 
-class ExerciseRecordAerobic(models.Model):
+class ExerciseRecordCardio(models.Model):
     user = models.ForeignKey('users.User', on_delete=models.CASCADE)
-    exercise_plan_aerobic = models.ForeignKey(
-        ExercisePlanAerobic, on_delete=models.CASCADE)
+    exercise = models.ForeignKey(Exercise, on_delete=models.CASCADE)
+    exercise_plan_cardio = models.ForeignKey(
+        ExercisePlanCardio, on_delete=models.CASCADE)
     record_distance = models.FloatField()
     record_duration = models.FloatField()
     date = models.DateField(auto_now_add=True)
@@ -70,18 +73,18 @@ class ExerciseRecordAerobic(models.Model):
 
     class Meta:
         managed = True
-        db_table = 'exercise_record_aerobic'
+        db_table = 'exercise_record_cardio'
 
 
-class ExerciseRecordAerobicRest(models.Model):
-    exercise_record_aerobic = models.ForeignKey(
-        ExerciseRecordAerobic, on_delete=models.CASCADE)
+class ExerciseRecordCardioRest(models.Model):
+    exercise_record_cardio = models.ForeignKey(
+        ExerciseRecordCardio, on_delete=models.CASCADE)
     start_time = models.IntegerField()
     end_time = models.IntegerField(blank=True, null=True)
 
     class Meta:
         managed = True
-        db_table = 'exercise_record_aerobic_rest'
+        db_table = 'exercise_record_cardio_rest'
 
 
 class ExerciseRecordWeight(models.Model):
@@ -91,6 +94,7 @@ class ExerciseRecordWeight(models.Model):
         ExercisePlanWeight, on_delete=models.CASCADE)
     total_sets = models.IntegerField()
     date = models.DateField(auto_now_add=True)
+    exercise_time = models.IntegerField()
     start_time = models.DateTimeField()
     end_time = models.DateTimeField()
     total_volume = models.FloatField()

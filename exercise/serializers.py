@@ -1,6 +1,5 @@
-from django.db.models import fields
 from rest_framework import serializers
-from .models import ExercisePlanWeight, ExercisePlanWeightSet, Exercise, ExerciseDetails, ExercisePlanAerobic, ExerciseRecordWeight, ExerciseRecordWeightSet, ExerciseRecordAerobic
+from .models import ExercisePlanWeight, ExercisePlanWeightSet, Exercise, ExerciseDetails, ExercisePlanCardio, ExerciseRecordWeight, ExerciseRecordWeightSet, ExerciseRecordCardio
 
 
 class ExerciseSerializer(serializers.ModelSerializer):
@@ -30,9 +29,9 @@ class ExercisePlanWeightSetSerializer(serializers.ModelSerializer):
                   'target_weight', 'target_reps')
 
 
-class ExercisePlanAerobicSerializer(serializers.ModelSerializer):
+class ExercisePlanCardioSerializer(serializers.ModelSerializer):
     class Meta:
-        model = ExercisePlanAerobic
+        model = ExercisePlanCardio
         fields = ('user_id', 'exercise_id', 'date',
                   'target_distance', 'target_duration')
 
@@ -42,21 +41,21 @@ class ExercisePlanAerobicSerializer(serializers.ModelSerializer):
 class ExerciseRecordWeightSerializer(serializers.ModelSerializer):
     class Meta:
         model = ExerciseRecordWeight
-        fields = ('total_sets', 'start_time', 'end_time',
+        fields = ('total_sets', 'exercise_time',
                   'total_volume', 'max_one_rm')
 
 
 class ExerciseRecordWeightSetSerializer(serializers.ModelSerializer):
     class Meta:
         model = ExerciseRecordWeightSet
-        fields = ('exercise_record_weight_id', 'record_weight',
-                  'record_reps', 'start_time', 'end_time', 'set_num')
+        fields = ('record_weight',
+                  'record_reps', 'set_num')
 
 
-class ExerciseRecordAerobicSerializer(serializers.ModelSerializer):
+class ExerciseRecordCardioSerializer(serializers.ModelSerializer):
     class Meta:
-        model = ExerciseRecordAerobic
-        fields = ('user_id', 'exercise_plan_aerobic_id', 'record_distance',
+        model = ExerciseRecordCardio
+        fields = ('user_id', 'exercise_plan_cardio_id', 'record_distance',
                   'record_duration', 'date', 'start_time', 'end_time', 'exercise_id')
 
 
