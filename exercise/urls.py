@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import getAllExercise, getExerciseByExerciseMethod, getExerciseByTargetMuscle, getExerciseByTargetMuscleExerciseMethod, getExerciseDetails, getExerciseTime, getUserPlanAerobicDate, getExerciseStatusDate, getExercisePlanWeightSets, getUserRecordAerobic, getUserRecordAerobicDate, getUserRecordWeight, getUserRecordWeightDate, getUserRecordWeightSets, getUserRecordWeightTargetMuscle, postExercisePlanAerobic, postExercisePlanWeight, exerciseRecordAerobic, exerciseRecordWeight
+from .views import *
 
 urlpatterns = [
     ####### 운동 종류 및 세부 정보 조회 #######
@@ -16,12 +16,13 @@ urlpatterns = [
     path('record_weight_date', getUserRecordWeightDate), #user_id & date -> user 특정 날짜의 운동 기록
     path('record_weight_target_muscle', getUserRecordWeightTargetMuscle),
     path('record_weight_sets', getUserRecordWeightSets), #exercise_record_weight_id -> 특정 운동 기록의 세부 
-    # path('record_aerobic', getUserRecordAerobic),
-    path('record_aerobic_date', getUserRecordAerobicDate),
+    path('record_cardio', getUserRecordCardio),
+    path('record_cardio_date', getUserRecordCardioDate),
     path("exercise_time", getExerciseTime), #date & user_id -> 해당 날짜 동안 user가 운동한 시간
     ####### 운동 계획 및 기록 등록 ###########
     path('post_exercise_plan_weight', postExercisePlanWeight), #user_id & exercise_id & date & num_sets & sets
-    path('post_exercise_plan_aerobic', postExercisePlanAerobic),
+    path('post_exercise_plan_cardio', postExercisePlanCardio),
     path('record_weight', exerciseRecordWeight),
-    path('record_aerobic', exerciseRecordAerobic),
+    path('record_cardio', exerciseRecordCardio),
+
 ]
