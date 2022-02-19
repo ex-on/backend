@@ -1,4 +1,5 @@
 from itertools import chain
+from tkinter import E
 from django.http.response import HttpResponse
 from django.shortcuts import render
 from django.utils import tree
@@ -10,8 +11,8 @@ import json
 from django.utils.dateparse import parse_datetime
 
 from .models import *
-from stats.models import DailyExerciseStats
-from .serializers import ExerciseDetailsSerializer, ExercisePlanCardioSerializer, ExercisePlanWeightSerializer, ExercisePlanWeightSetSerializer, ExerciseRecordCardioSerializer, ExerciseRecordWeightSerializer, ExerciseSerializer, ExerciseTimeSerializer, ExerciseRecordWeightSetSerializer
+from stats.models import DailyExerciseStats, PhysicalDataRecord
+from .serializers import ExerciseDetailsSerializer, ExercisePlanCardioSerializer, ExercisePlanWeightSerializer, ExercisePlanWeightSetSerializer, ExerciseRecordBodyWeightSerializer, ExerciseRecordCardioSerializer, ExerciseRecordWeightSerializer, ExerciseSerializer, ExerciseTimeSerializer, ExerciseRecordWeightSetSerializer
 # Create your views here.
 
 ########### 운동 종류 및 세부 정보 조회 #############################
@@ -71,6 +72,90 @@ def getExerciseDetails(request):
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
+def getExerciseStatusWeek(request):
+    uuid = request.user.uuid
+    firstDate = datetime.datetime.strptime(
+        request.GET['first_date'], '%Y-%m-%d')
+    todayDate = datetime.datetime.now()
+    weekStatus = {}
+    weekWeightPlans = ExercisePlanWeight.objects.filter(
+        user_id=uuid, date__range=[firstDate, todayDate], completed=False)
+    weekCardioPlans = ExercisePlanCardio.objects.filter(
+        user_id=uuid, date__range=[firstDate, todayDate], completed=False)
+    weekWeightRecords = ExerciseRecordWeight.objects.filter(
+        user_id=uuid, date__range=[firstDate, todayDate])
+    weekCardioRecords = ExerciseRecordCardio.objects.filter(
+        user_id=uuid, date__range=[firstDate, todayDate])
+
+    for i in range((todayDate - firstDate).days + 1):
+
+        indexDate = firstDate + datetime.timedelta(days=i)
+        weightPlans = weekWeightPlans.filter(date=indexDate)
+        cardioPlans = weekCardioPlans.filter(date=indexDate)
+        weightRecords = weekWeightRecords.filter(date=indexDate)
+        cardioRecords = weekCardioRecords.filter(date=indexDate)
+
+        plans = chain(weightPlans, cardioPlans)
+        records = chain(weightRecords, cardioRecords)
+        planDataList = []
+        recordDataList = []
+        totalExerciseTime = 0
+        for plan in plans:
+            if isinstance(plan, ExercisePlanWeight):
+                planData = ExercisePlanWeightSerializer(plan).data
+                exerciseData = ExerciseSerializer(
+                    Exercise.objects.get(id=plan.exercise_id)).data
+            else:
+                planData = ExercisePlanCardioSerializer(plan).data
+                exerciseData = ExerciseSerializer(
+                    Exercise.objects.get(id=plan.exercise_id)).data
+            data = {
+                'exercise_data': exerciseData,
+                'plan_data': planData,
+            }
+            planDataList.append(data)
+
+        for record in records:
+            exerciseTime = int(
+                (record.end_time - record.start_time).total_seconds())
+            totalExerciseTime += exerciseTime
+            if isinstance(record, ExerciseRecordWeight):
+                recordData = {
+                    'total_sets': record.total_sets,
+                    'total_volume': record.total_volume,
+                    'total_reps': record.total_reps,
+                }
+            else:
+                recordData = {
+                    'record_duration': record.record_duration,
+                    'record_distance': record.record_distance,
+                }
+
+            exerciseData = ExerciseSerializer(
+                Exercise.objects.get(id=record.exercise_id)).data
+                
+            data = {
+                'exercise_data': exerciseData,
+                'record_data': recordData,
+            }
+            recordDataList.append(data)
+
+        if indexDate.date() == todayDate.date():
+            weekStatus[indexDate.strftime('%Y/%m/%d')] = {
+                'plans': planDataList,
+                'records': recordDataList,
+                'total_exercise_time': totalExerciseTime,
+            }
+        else:
+            weekStatus[indexDate.strftime('%Y/%m/%d')] = {
+                'plans': planDataList,
+                'records': recordDataList,
+            }
+    return Response(weekStatus)
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
 def getExerciseStatusDate(request):
     uuid = request.user.uuid
     _date = request.GET['date']
@@ -111,10 +196,17 @@ def getExerciseStatusDate(request):
             recordData = {
                 'total_sets': record.total_sets,
                 'total_volume': record.total_volume,
+                'total_reps': record.total_reps,
             }
-            exerciseData = ExerciseSerializer(
-                Exercise.objects.get(id=record.exercise_id)).data
-        # else:
+        else:
+            recordData = {
+                'record_duration': record.record_duration,
+                'record_distance': record.record_distance,
+            }
+
+        exerciseData = ExerciseSerializer(
+            Exercise.objects.get(id=record.exercise_id)).data
+
         data = {
             'exercise_data': exerciseData,
             'record_data': recordData,
@@ -141,6 +233,16 @@ def getExercisePlanWeightSets(request):
     _exercise_plan_weight_id = request.GET['exercise_plan_weight_id']
     sets = ExercisePlanWeightSet.objects.filter(
         exercise_plan_weight_id=_exercise_plan_weight_id)
+    serializer = ExercisePlanWeightSetSerializer(sets, many=True)
+    return Response(serializer.data)
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def getExercisePlanCardio(request):
+    _exercise_plan_cardio_id = request.GET['exercise_plan_cardio_id']
+    sets = ExercisePlanCardio.objects.filter(
+        exercise_plan_cardio_id=_exercise_plan_cardio_id)
     serializer = ExercisePlanWeightSetSerializer(sets, many=True)
     return Response(serializer.data)
 
@@ -268,9 +370,10 @@ def postExercisePlanWeight(request):
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def postExercisePlanCardio(request):
-    request = json.loads(request.body)
-    record = ExercisePlanCardio(user_id=request['user_id'], exercise_id=request['exercise_id'], date=request['date'],
-                                target_distance=request['target_distance'], target_duration=request['target_duration'])
+    uuid = request.user.uuid
+    data = json.loads(request.body)
+    record = ExercisePlanCardio(user_id=uuid, exercise_id=data['exercise_id'],
+                                target_distance=data['target_distance'], target_duration=data['target_duration'])
     record.save()
     return HttpResponse(status=200)
 
@@ -282,11 +385,11 @@ def exerciseRecordWeight(request):
     if request.method == 'POST':
         data = json.loads(request.body)
         sets = data['sets']
-        totalVolume = 0
-        maxOneRm = 0
+        maxOneRm = totalVolume = totalReps = 0
         for set in sets:
             totalVolume += float(set['record_weight']) * \
                 int(set['record_reps'])
+            totalReps += int(set['record_reps'])
             oneRm = float(set['record_weight']) * \
                 (1 + int(set['record_reps']) * 0.025)
             if oneRm > maxOneRm:
@@ -299,7 +402,7 @@ def exerciseRecordWeight(request):
 
         record = ExerciseRecordWeight(user_id=uuid, exercise_plan_weight_id=data['exercise_plan_weight_id'],
                                       exercise_id=data['exercise_id'],
-                                      total_sets=len(sets), exercise_time=int((parse_datetime(data['end_time'])-parse_datetime(data['start_time'])).total_seconds()), start_time=data['start_time'], end_time=data['end_time'], total_volume=totalVolume, max_one_rm=maxOneRm)
+                                      total_sets=len(sets), total_reps=totalReps, exercise_time=int((parse_datetime(data['end_time'])-parse_datetime(data['start_time'])).total_seconds()), start_time=data['start_time'], end_time=data['end_time'], total_volume=totalVolume, max_one_rm=maxOneRm)
         record.save()
 
         for idx, set in enumerate(sets):
@@ -328,17 +431,53 @@ def exerciseRecordWeight(request):
         exercise = Exercise.objects.get(id=record.exercise_id)
         data = {
             'exercise_name': exercise.name,
-            'record_data': ExerciseRecordWeightSerializer(record).data
+            'record_data': ExerciseRecordWeightSerializer(record).data if exercise.exercise_method != 1 else ExerciseRecordBodyWeightSerializer(record).data,
         }
         return Response(data=data)
 
 
-@api_view(['POST'])
+@api_view(['GET', 'POST'])
 @permission_classes([IsAuthenticated])
 def exerciseRecordCardio(request):
-    request = json.loads(request.body)
-    record = ExerciseRecordCardio(user_id=request['user_id'], exercise_id=request['exercise_id'], exercise_plan_cardio_id=request['exercise_plan_cardio_id'],
-                                  date=request['date'], record_distance=request['record_distance'], record_duration=request['record_duration'],
-                                  start_time=request['start_time'], end_time=request['end_time'])
-    record.save()
-    return HttpResponse(status=200)
+    uuid = request.user.uuid
+    if request.method == 'POST':
+        data = json.loads(request.body)
+        record = ExerciseRecordCardio(user_id=uuid, exercise_id=data['exercise_id'], exercise_plan_cardio_id=data['exercise_plan_cardio_id'],
+                                      record_duration=data['record_duration'],
+                                      start_time=data['start_time'], end_time=data['end_time'])
+        if 'record_distance' in data:
+            record.record_distance = data['record_distance']
+        record.save()
+        plan = ExercisePlanCardio.objects.get(
+            id=data['exercise_plan_cardio_id'])
+        plan.completed = 1
+        plan.save()
+
+        if DailyExerciseStats.objects.filter(user_id=uuid, day=record.date).exists():
+            dailyRecord = DailyExerciseStats.objects.get(
+                user_id=uuid, day=record.date)
+            dailyRecord.total_exercise_time += record.record_duration
+            if record.record_distance is not None:
+                dailyRecord.total_distance += record.record_distance
+            dailyRecord.save()
+        else:
+            dailyRecord = DailyExerciseStats(day=record.date, user_id=uuid, total_exercise_time=record.record_duration,
+                                             )
+            if record.record_distance is not None:
+                dailyRecord.total_distance += record.record_distance
+            dailyRecord.save()
+
+        return Response(status=200, data=record.id)
+    else:
+        exerciseRecordCardioId = int(request.GET['id'])
+        record = ExerciseRecordCardio.objects.get(id=exerciseRecordCardioId)
+        exercise = Exercise.objects.get(id=record.exercise_id)
+        data = {
+            'exercise_name': exercise.name,
+            'record_data': {
+                'record_duration': record.record_duration,
+                'record_distance': record.record_distance,
+                'record_calories': exercise.cardio_met * 3.5 * 0.001 * PhysicalDataRecord.objects.filter(user_id=uuid).order_by('-created_at').first().weight * 5,
+            },
+        }
+        return Response(data=data)

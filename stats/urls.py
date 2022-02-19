@@ -7,4 +7,8 @@ urlpatterns = [
     path('weekly', weeklyExerciseStats),
     path('monthly', monthlyExerciseStats),
     path('monthly_date', monthlyExerciseDates),
+    path('cumulative_time', cumulativeTimeStats),
+    path('cumulative_exercise', cumulativeExerciseStats),
+    path('exercise', exerciseStats),
+    path('physical_data', physicalData),
 ]

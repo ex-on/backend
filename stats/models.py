@@ -14,3 +14,18 @@ class DailyExerciseStats(models.Model):
     class Meta:
         managed = True
         db_table = 'daily_exercise_stats'
+
+
+class PhysicalDataRecord(models.Model):
+    user = models.ForeignKey('users.User', on_delete=models.CASCADE)
+    weight = models.FloatField()
+    muscle_mass = models.FloatField(null=True)
+    body_fat_percentage = models.FloatField(null=True)
+    bmi = models.FloatField()
+    inbody_score = models.IntegerField(null=True)
+    created_at = models.DateTimeField(
+        'Created at', auto_now_add=True, null=True)
+
+    class Meta:
+        managed = True
+        db_table = 'physical_data_record'

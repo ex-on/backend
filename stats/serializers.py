@@ -7,3 +7,9 @@ class DailyExerciseStatsSerializer(serializers.ModelSerializer):
         model = DailyExerciseStats
         fields = ('total_exercise_time', 'total_sets', 'max_one_rm',
                   'total_volume', 'total_distance', 'memo',)
+
+
+class PhysicalDataRecordSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PhysicalDataRecord
+        fields = ('weight', 'muscle_mass', 'body_fat_percentage', 'created_at',)
