@@ -14,8 +14,13 @@ from pathlib import Path
 import os
 import json
 from urllib import request
+import firebase_admin
+from firebase_admin import credentials
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
+cred_path = os.path.join(BASE_DIR, "fcmServiceAccountKey.json")
+cred = credentials.Certificate(cred_path)
+firebase_admin.initialize_app(cred)
 
 
 # Quick-start development settings - unsuitable for production
@@ -70,11 +75,12 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'rest_framework',
-    'users.apps.UsersConfig',
+    'users',
     'exercise.apps.ExerciseConfig',
-    'community.apps.CommunityConfig',
-    'stats.apps.StatsConfig',
-    'core.apps.CoreConfig',
+    'community',
+    'stats',
+    'core',
+    'push_notification',
 ]
 
 MIDDLEWARE = [

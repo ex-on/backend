@@ -54,11 +54,14 @@ class User(PermissionsMixin, AbstractBaseUser, AbstractBaseUserModel):
 
 class UserDetailsCount(models.Model):
     user = models.ForeignKey(User, on_delete = CASCADE)
-    count_liked_posts = models.IntegerField()
-    count_saved_posts = models.IntegerField()
-    count_uploaded_posts = models.IntegerField()
-    count_uploaded_qna_posts = models.IntegerField()
-    count_uploaded_answers = models.IntegerField(blank=True, null=True)
+    count_protein = models.IntegerField(default=0)
+    count_liked_posts = models.IntegerField(default=0)
+    count_saved_posts = models.IntegerField(default=0)
+    count_uploaded_posts = models.IntegerField(default=0)
+    count_uploaded_qnas = models.IntegerField(default=0)
+    count_uploaded_answers = models.IntegerField(default=0)
+    count_accepted_answers = models.IntegerField(default=0)
+    answer_acception_rate = models.FloatField(default = 0)
 
     class Meta:
         managed = True
@@ -71,25 +74,14 @@ class UserDetailsStatic(models.Model):
     birth_date = models.DateField()
     activity_level = models.IntegerField(default=0)
     physical_level = models.IntegerField(blank=True, null=True)
+    height = models.FloatField(null=True)
+    profile_community_privacy = models.BooleanField(default=False)
+    profile_physical_data_privacy = models.BooleanField(default=False)
     intro_text = models.CharField(max_length=30, blank=True, null=True)
 
     class Meta:
         managed = True
         db_table = 'user_details_static'
-
-
-class UserPhysicalData(models.Model):
-    user = models.ForeignKey(User, on_delete = CASCADE)
-    height = models.FloatField(blank = True, null = True)
-    weight = models.FloatField(blank=True, null=True)
-    muscle_mass = models.FloatField(blank=True, null=True)
-    body_fat_percentage = models.FloatField(blank=True, null=True)
-    created_at = models.DateTimeField('Created at', auto_now_add=True, null=True)
-
-    class Meta:
-        managed = True
-        db_table = 'user_physical_data'
-
 
 class UsersLikedPosts(models.Model):
     user = models.ForeignKey(User, on_delete = CASCADE)
