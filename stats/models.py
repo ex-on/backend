@@ -8,6 +8,7 @@ class DailyExerciseStats(models.Model):
     max_one_rm = models.FloatField(default=0)
     total_volume = models.FloatField(default=0)
     total_distance = models.FloatField(default=0)
+    total_calories = models.FloatField(default=0)
     day = models.DateField(auto_now_add=True)
     memo = models.CharField(max_length=300, null=True)
 

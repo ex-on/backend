@@ -75,6 +75,7 @@ class ExerciseRecordCardio(models.Model):
         ExercisePlanCardio, on_delete=models.CASCADE)
     record_distance = models.FloatField(null=True)
     record_duration = models.IntegerField()
+    record_calories = models.FloatField()
     date = models.DateField(auto_now_add=True)
     start_time = models.DateTimeField()
     end_time = models.DateTimeField(blank=True, null=True)

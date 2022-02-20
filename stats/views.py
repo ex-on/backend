@@ -1,9 +1,7 @@
 from http import HTTPStatus
 from itertools import chain
 from math import ceil
-from this import d
 from django.http import HttpResponse
-from django.shortcuts import render
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.decorators import api_view, permission_classes
@@ -21,9 +19,8 @@ from .models import *
 
 from exercise.serializers import ExerciseRecordWeightSerializer, ExerciseRecordWeightSetSerializer, ExerciseSerializer
 from .serializers import *
+
 # Create your views here.
-
-
 def getWeeklyExerciseStats(uuid, firstDate):
     lastDate = firstDate + datetime.timedelta(days=6)
     data = {}
@@ -340,7 +337,6 @@ def monthlyExerciseDates(request):
 
     return Response(data=data)
 
-
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def cumulativeTimeStats(request):
@@ -384,7 +380,6 @@ def cumulativeTimeStats(request):
     }
 
     return Response(data=data)
-
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
@@ -460,7 +455,6 @@ def cumulativeExerciseStats(request):
 
     return Response(data=data)
 
-
 @api_view(['GET', 'POST'])
 @permission_classes([IsAuthenticated])
 def physicalData(request):
@@ -524,7 +518,6 @@ def physicalData(request):
         }
 
         return Response(data=data)
-
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])

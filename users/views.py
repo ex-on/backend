@@ -6,13 +6,12 @@ from rest_framework.decorators import api_view, authentication_classes, permissi
 from rest_framework.permissions import IsAuthenticated
 from exercise.models import ExercisePlanCardio, ExercisePlanWeight, ExerciseRecordCardio, ExerciseRecordWeight
 from exon_backend.settings import COGNITO_POOL_DOMAIN, COGNITO_AWS_REGION
-from stats.models import PhysicalDataRecord
+from stats.models import DailyExerciseStats, PhysicalDataRecord
 from .models import *
 import json
 import datetime
 import requests
 from core.utils.jwt import cognito_jwt_decode_handler
-# Create your views here.
 
 
 @api_view(['GET'])
@@ -125,9 +124,8 @@ def cognitoUserPhysicalInfo(request):
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
-def getProfileStats(request):
+def profileStats(request):
     uuid = request.user.uuid
-
     staticData = UserDetailsStatic.objects.get(user_id=uuid)
     countData = UserDetailsCount.objects.get(user_id=uuid)
     monthlyExerciseData, communityData, physicalData = ({} for i in range(3))
@@ -135,32 +133,19 @@ def getProfileStats(request):
         user_id=uuid), ExercisePlanCardio.objects.filter(user_id=uuid))
 
     for plan in exercisePlans:
-        if isinstance(plan, ExercisePlanWeight):
-            date = datetime.datetime.strftime(
-                plan.date, '%Y-%m-%d')
-            record = ExerciseRecordWeight.objects.filter(
-                exercise_plan_weight_id=plan.id)
-            if date in monthlyExerciseData:
-                if record.exists() and monthlyExerciseData[date] == 1:
-                    monthlyExerciseData[date] = 2
-            else:
-                if record.exists():
-                    monthlyExerciseData[date] = 3
-                else:
-                    monthlyExerciseData[date] = 1
+        date = datetime.datetime.strftime(
+            plan.date, '%Y-%m-%d')
+        completed = plan.completed
+        if date in monthlyExerciseData:
+            if completed and monthlyExerciseData[date] == 1:
+                monthlyExerciseData[date] = 2
+            elif not completed and monthlyExerciseData[date] == 3:
+                monthlyExerciseData[date] = 2
         else:
-            date = datetime.datetime.strftime(
-                plan.date, '%Y-%m-%d')
-            record = ExerciseRecordCardio.objects.filter(
-                exercise_plan_cardio_id=plan.id)
-            if date in monthlyExerciseData:
-                if record.exists() and monthlyExerciseData[date] == 1:
-                    monthlyExerciseData[date] = 2
+            if completed:
+                monthlyExerciseData[date] = 3
             else:
-                if record.exists():
-                    monthlyExerciseData[date] = 3
-                else:
-                    monthlyExerciseData[date] = 1
+                monthlyExerciseData[date] = 1
 
     if staticData.profile_community_privacy:
         communityData = {
@@ -182,8 +167,8 @@ def getProfileStats(request):
         }
     else:
         physicalDataRecord = PhysicalDataRecord.objects.filter(
-        user_id=uuid).order_by('-created_at').first()
-        
+            user_id=uuid).order_by('-created_at').first()
+
         physicalData = {
             'height': staticData.height,
             'weight': physicalDataRecord.weight,
@@ -193,8 +178,6 @@ def getProfileStats(request):
             'inbody_score': physicalDataRecord.inbody_score,
             'privacy': False,
         }
-
-    
 
     data = {
         'activity_level': {
@@ -208,3 +191,115 @@ def getProfileStats(request):
     }
 
     return Response(data=data)
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def rankProtein(request):
+    uuid = request.user.uuid
+    userStatic = UserDetailsStatic.objects.get(user_id=uuid)
+    count = UserDetailsCount.objects.get(user_id=uuid)
+    proteinRank = UserDetailsCount.objects.order_by('-count_protein')
+    rankList = []
+    rank = 0
+
+    for e in proteinRank:
+        static = UserDetailsStatic.objects.get(user_id=e.user_id)
+        if e.user_id == uuid:
+            rank = len(rankList) + 1
+        rankList.append({
+            'activity_level': static.activity_level,
+            'username': User.objects.get(uuid=e.user_id).username,
+            'protein': e.count_protein,
+        })
+
+    data = {
+        'protein': count.count_protein,
+        'rank': rank,
+        'activity_level': userStatic.activity_level,
+        'rank_list': rankList,
+    }
+
+    return Response(data=data)
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def rankCardio(request):
+    uuid = request.user.uuid
+    month = request.GET['month']
+
+    monthlyStats = DailyExerciseStats.objects.filter(day__month=month)
+    userCalories = avgCalories = 0
+    rankDict = {}
+    rank = 0
+
+    for stat in monthlyStats:
+        if (stat.user_id==uuid):
+            userCalories += stat.total_calories
+        if stat.user_id in rankDict:
+            rankDict[stat.user_id] += stat.total_calories
+        else:
+            rankDict[stat.user_id] = stat.total_calories
+    
+    rankList = sorted(rankDict.items(), key= lambda e: e[1], reverse=True)
+    rankDictList = []
+
+    for index, item in enumerate(rankList):
+        if item[0] == uuid:
+            rank = index + 1
+        avgCalories += item[1] / len(rankList)
+        rankDictList.append({
+            'activity_level': UserDetailsStatic.objects.get(user_id=item[0]).activity_level,
+            'username': User.objects.get(uuid=item[0]).username,
+            'calories': item[1]
+        })
+
+    data = {
+        'calories': userCalories,
+        'avg_calories': avgCalories,
+        'rank': rank,
+        'rank_list': rankDictList,
+    }
+
+    return Response(data=data)
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def rankWeight(request):
+    uuid = request.user.uuid
+    month = request.GET['month']
+
+    monthlyStats = DailyExerciseStats.objects.filter(day__month=month)
+    userVolume = avgVolume = 0
+    rankDict = {}
+    rank = 0
+
+    for stat in monthlyStats:
+        if (stat.user_id==uuid):
+            userVolume += stat.total_volume
+        if stat.user_id in rankDict:
+            rankDict[stat.user_id] += stat.total_volume
+        else:
+            rankDict[stat.user_id] = stat.total_volume
+    
+    rankList = sorted(rankDict.items(), key= lambda e: e[1], reverse=True)
+    rankDictList = []
+
+    for index, item in enumerate(rankList):
+        if item[0] == uuid:
+            rank = index + 1
+        avgVolume += item[1] / len(rankList)
+        rankDictList.append({
+            'activity_level': UserDetailsStatic.objects.get(user_id=item[0]).activity_level,
+            'username': User.objects.get(uuid=item[0]).username,
+            'volume': item[1]
+        })
+
+    data = {
+        'volume': userVolume,
+        'avg_volume': avgVolume,
+        'rank': rank,
+        'rank_list': rankDictList,
+    }
+
+    return Response(data=data)
+
