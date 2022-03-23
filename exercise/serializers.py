@@ -42,7 +42,8 @@ class ExerciseRecordWeightSerializer(serializers.ModelSerializer):
     class Meta:
         model = ExerciseRecordWeight
         fields = ('total_sets', 'exercise_time',
-                  'total_volume', 'max_one_rm',)
+                  'total_volume', 'max_one_rm', 'total_reps',)
+
 
 class ExerciseRecordBodyWeightSerializer(serializers.ModelSerializer):
     class Meta:
@@ -62,7 +63,8 @@ class ExerciseRecordCardioSerializer(serializers.ModelSerializer):
     class Meta:
         model = ExerciseRecordCardio
         fields = ('record_distance',
-                  'record_duration')
+                  'record_duration',
+                  'record_calories')
 
 
 class ExerciseTimeSerializer(serializers.Serializer):

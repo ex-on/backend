@@ -124,19 +124,19 @@ class UsersLikedQnaAnswerComments(models.Model):
         managed = True
         db_table = 'users_liked_qna_answer_comments'
 
-class UsersSavedPosts(models.Model):
+class UsersBookmarkedPosts(models.Model):
     user = models.ForeignKey(User, on_delete = CASCADE)
     post = models.ForeignKey('community.Post', on_delete = CASCADE)
 
     class Meta:
         managed = True
-        db_table = 'users_saved_posts'
+        db_table = 'users_bookmarked_posts'
 
 
-class UsersSavedQnas(models.Model):
+class UsersBookmarkedQnas(models.Model):
     user = models.ForeignKey(User, on_delete = CASCADE)
     qna = models.ForeignKey('community.Qna', on_delete = CASCADE)
 
     class Meta:
         managed = True
-        db_table = 'users_saved_qnas'
+        db_table = 'users_bookmarked_qnas'

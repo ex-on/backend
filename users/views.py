@@ -12,6 +12,7 @@ import json
 import datetime
 import requests
 from core.utils.jwt import cognito_jwt_decode_handler
+from stats.constants import getStandardBmi, getStandardBodyFatPercentage
 
 
 @api_view(['GET'])
@@ -38,8 +39,8 @@ def checkUserInfo(request):
     user = User.objects.get(uuid=uuid)
     if (UserDetailsStatic.objects.filter(user_id=uuid).exists()):
         userDetailsStatic = UserDetailsStatic.objects.get(user_id=uuid)
-        userInfoExists = (user.username is not None) & (
-            userDetailsStatic.birth_date is not None) & (userDetailsStatic.gender is not None)
+        userInfoExists = (user.username is not None) and (
+            userDetailsStatic.birth_date is not None) and (userDetailsStatic.gender is not None)
     else:
         userInfoExists = False
     return Response(userInfoExists)
@@ -49,12 +50,17 @@ def checkUserInfo(request):
 @permission_classes([IsAuthenticated])
 def getUserInfo(request):
     uuid = request.user.uuid
-    userInfo = {
-        'username': User.objects.get(uuid=uuid).username,
-        'activity_level': UserDetailsStatic.objects.get(user_id=uuid).activity_level,
-        'created_at': User.objects.get(uuid=uuid).created_at
-    }
-    return Response(userInfo)
+    userInfo = {}
+    if not UserDetailsStatic.objects.filter(user_id=uuid).exists():
+        return Response(status=status.HTTP_303_SEE_OTHER)
+    else:
+        if User.objects.filter(uuid=uuid):
+            userInfo = {
+                'username': User.objects.get(uuid=uuid).username,
+                'activity_level': UserDetailsStatic.objects.get(user_id=uuid).activity_level,
+                'created_at': User.objects.get(uuid=uuid).created_at
+            }
+        return Response(userInfo)
 
 
 @api_view(['POST'])
@@ -108,16 +114,29 @@ def registerCognitoUserInfo(request):
 def cognitoUserPhysicalInfo(request):
     uuid = request.user.uuid
     data = json.loads(request.body)
-    height = data['height']
-    weight = data['weight']
-    muscleMass = data['muscle_mass']
-    bodyFatPercentage = data['body_fat_percentage']
-    userPhysicalData = PhysicalDataRecord(
-        user_id=uuid, weight=weight, muscle_mass=muscleMass, body_fat_percentage=bodyFatPercentage)
-    userPhysicalData.save()
+
+    height = float(data['height']) / 100
+    weight = float(data['weight'])
+    muscleMass = float(data['muscle_mass']) if data['muscle_mass'] is not None else None
+    bodyFatPercentage = float(data['body_fat_percentage']) if data['body_fat_percentage'] is not None else None
+
     userDetailsStatic = UserDetailsStatic.objects.get(user_id=uuid)
-    userDetailsStatic.height = height
+    userDetailsStatic.height = float(data['height'])
     userDetailsStatic.save()
+
+    gender = UserDetailsStatic.objects.get(user_id=uuid).gender
+
+    bmi = weight / height ** 2
+    standardWeight = (height ** 2) * getStandardBmi(gender)
+    if bodyFatPercentage:
+        inbodyScore = 80 - (standardWeight * (100 - getStandardBodyFatPercentage(gender))/100 - weight * (
+            100 - bodyFatPercentage)/100) + (standardWeight * getStandardBodyFatPercentage(gender)/100 - weight * bodyFatPercentage/100)
+    else:
+        inbodyScore = None
+
+    physicalDataRecord = PhysicalDataRecord(
+        user_id=uuid, weight=weight, muscle_mass=muscleMass, body_fat_percentage=bodyFatPercentage, bmi=bmi, inbody_score=inbodyScore)
+    physicalDataRecord.save()
 
     return HttpResponse(status=status.HTTP_201_CREATED)
 
@@ -192,6 +211,7 @@ def profileStats(request):
 
     return Response(data=data)
 
+
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def rankProtein(request):
@@ -221,6 +241,7 @@ def rankProtein(request):
 
     return Response(data=data)
 
+
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def rankCardio(request):
@@ -233,14 +254,14 @@ def rankCardio(request):
     rank = 0
 
     for stat in monthlyStats:
-        if (stat.user_id==uuid):
+        if (stat.user_id == uuid):
             userCalories += stat.total_calories
         if stat.user_id in rankDict:
             rankDict[stat.user_id] += stat.total_calories
         else:
             rankDict[stat.user_id] = stat.total_calories
-    
-    rankList = sorted(rankDict.items(), key= lambda e: e[1], reverse=True)
+
+    rankList = sorted(rankDict.items(), key=lambda e: e[1], reverse=True)
     rankDictList = []
 
     for index, item in enumerate(rankList):
@@ -262,6 +283,7 @@ def rankCardio(request):
 
     return Response(data=data)
 
+
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def rankWeight(request):
@@ -274,14 +296,14 @@ def rankWeight(request):
     rank = 0
 
     for stat in monthlyStats:
-        if (stat.user_id==uuid):
+        if (stat.user_id == uuid):
             userVolume += stat.total_volume
         if stat.user_id in rankDict:
             rankDict[stat.user_id] += stat.total_volume
         else:
             rankDict[stat.user_id] = stat.total_volume
-    
-    rankList = sorted(rankDict.items(), key= lambda e: e[1], reverse=True)
+
+    rankList = sorted(rankDict.items(), key=lambda e: e[1], reverse=True)
     rankDictList = []
 
     for index, item in enumerate(rankList):
@@ -302,4 +324,3 @@ def rankWeight(request):
     }
 
     return Response(data=data)
-
