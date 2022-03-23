@@ -108,8 +108,6 @@ class ExerciseRecordWeightSet(models.Model):
         ExerciseRecordWeight, on_delete=models.CASCADE)
     record_weight = models.FloatField()
     record_reps = models.IntegerField()
-    start_time = models.DateTimeField()
-    end_time = models.DateTimeField()
     set_num = models.IntegerField(blank=True, null=True)
     one_rm = models.FloatField()
 

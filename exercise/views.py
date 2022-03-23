@@ -375,8 +375,8 @@ def exerciseRecordWeight(request):
 
         for idx, set in enumerate(sets):
             recordSet = ExerciseRecordWeightSet(exercise_record_weight_id=record.id, record_weight=set['record_weight'],
-                                                record_reps=set['record_reps'], start_time=set['start_time'],
-                                                end_time=set['end_time'], set_num=idx + 1, one_rm=float(set['record_weight']) * (1 + int(set['record_reps']) * 0.025))
+                                                record_reps=set['record_reps'], 
+                                                 set_num=idx + 1, one_rm=float(set['record_weight']) * (1 + int(set['record_reps']) * 0.025))
             recordSet.save()
 
         if DailyExerciseStats.objects.filter(user_id=uuid, day=record.date).exists():

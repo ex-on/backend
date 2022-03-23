@@ -3,6 +3,7 @@ from django.urls import path
 from community.views import *
 
 urlpatterns = [
+     path('search', search),
     ########게시판 메인화면###########
     path('post_list', getPostPreview),  # page_num
     path('post_list/hot', getHotPostPreview),  # page_num
@@ -26,14 +27,12 @@ urlpatterns = [
     path('qna_answer', postQnaAnswer),
     path('qna_answer_comment', postQnaAnswerComment),
     path('qna_answer_comment_reply', postQnaAnswerCommentReply),
+
+    path('qna_select_answer', qnaSelectAnswer),
     ########게시물 수정###############
-    path('modifypost', modifyPost),
-    path('modifypostcomment', modifyPostComment),
-    path('modifypostcommentreply', modifyPostCommentReply),
-    path('modifyqna', modifyQna),
-    path('modifyqnaanswer', modifyQnaAnswer),
-    path('modifyqnaanswercomment', modifyQnaAnswerComment),
-    path('modifyqnaanswercommentreply', modifyQnaAnswerCommentReply),
+    path('post/update', updatePost),
+    path('qna/update', updateQna),
+    path('qna_answer/update', updateQnaAnswer),
     ########게시물 좋아요, 저장###############
     path('get_post_count', getPostCount),
     path('update_post_count/likes', updatePostLikeCount),
@@ -49,7 +48,13 @@ urlpatterns = [
     path('update_qna_answer_count/likes', updateQnaAnswerLikeCount),
     path('update_qna_answer_comment_count/likes', updateQnaAnswerCommentLikeCount),
     ########게시판 보관함###########
-    path('saved', getSavedPostQnaPreview),
+    path('saved', savedPage),
+    path('saved/bookmarks/posts', bookmarkedPosts),
+    path('saved/bookmarks/qnas', bookmarkedQnas),
+    path('saved/user_posts', savedUserPosts),
+    path('saved/user_commented_posts', savedUserCommentedPosts),
+    path('saved/user_qnas', savedUserQnas),
+    path('saved/user_answered_qnas', savedUserAnsweredQnas),
     ########게시물 신고#######################
     path('update_report_post', updateUserReportedPosts),
     path('update_report_post_comment', updateUserReportedPostComments),
@@ -62,11 +67,6 @@ urlpatterns = [
     path('update_report_qna_answer_comment_reply',
          updateUserReportedQnaAnswerCommentReplies),
     ########게시물 삭제#######################
-    path('delete_post', deletePost),
-    path('delete_post_comment', deletePostComment),
-    path('delete_post_comment_reply', deletePostCommentReply),
-    path('delete_qna', deleteQna),
-    path('delete_qna_answer', deleteQnaAnswer),
-    path('delete_qna_answer_comment', deleteQnaAnswerComment),
-    path('delete_qna_answer_comment_reply', deleteQnaAnswerCommentReply),
+    path('delete', delete),
+    path('report', report),
 ]

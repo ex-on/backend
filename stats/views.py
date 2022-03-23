@@ -17,10 +17,12 @@ from .uxCopy import *
 from exercise.models import *
 from .models import *
 
-from exercise.serializers import ExerciseRecordWeightSerializer, ExerciseRecordWeightSetSerializer, ExerciseSerializer
+from exercise.serializers import ExercisePlanCardioSerializer, ExerciseRecordBodyWeightSerializer, ExerciseRecordCardioSerializer, ExerciseRecordWeightSerializer, ExerciseRecordWeightSetSerializer, ExerciseSerializer
 from .serializers import *
 
 # Create your views here.
+
+
 def getWeeklyExerciseStats(uuid, firstDate):
     lastDate = firstDate + datetime.timedelta(days=6)
     data = {}
@@ -53,7 +55,6 @@ def getWeeklyExerciseStats(uuid, firstDate):
 
     return data
 
-
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def dailyExerciseStats(request):
@@ -63,24 +64,40 @@ def dailyExerciseStats(request):
     if (DailyExerciseStats.objects.filter(user_id=uuid, day=searchDate).exists()):
         dailyStats = DailyExerciseStats.objects.get(
             user_id=uuid, day=searchDate)
-        recordWeights = ExerciseRecordWeight.objects.filter(
+        recordsWeight = ExerciseRecordWeight.objects.filter(
+            user_id=uuid, start_time__date=searchDate)
+        recordsCardio = ExerciseRecordCardio.objects.filter(
             user_id=uuid, start_time__date=searchDate)
         recordData = []
 
-        for index, record in enumerate(recordWeights):
-            recordData.append(ExerciseRecordWeightSerializer(record).data)
+        for index, record in enumerate(recordsWeight):
+            weightData = ExerciseRecordWeightSerializer(record).data
             recordSets = ExerciseRecordWeightSet.objects.filter(
                 exercise_record_weight_id=record.id)
             setDataList = []
             for set in recordSets:
                 setDataList.append(ExerciseRecordWeightSetSerializer(set).data)
-            recordData[index]['sets'] = setDataList
+            weightData['sets'] = setDataList
             exercise = Exercise.objects.get(id=record.exercise_id)
-            recordData[index]['exercise_data'] = {
+            weightData['exercise_data'] = {
                 'name': exercise.name,
                 'target_muscle': exercise.target_muscle,
                 'exercise_method': exercise.exercise_method,
             }
+            recordData.append(weightData)
+
+        for index, record in enumerate(recordsCardio):
+            cardioData = ExerciseRecordCardioSerializer(record).data
+            plan = ExercisePlanCardio.objects.get(
+                id=record.exercise_plan_cardio_id)
+            exercise = Exercise.objects.get(id=record.exercise_id)
+            cardioData['target_duration'] = plan.target_duration
+            cardioData['target_distance'] = plan.target_distance
+            cardioData['exercise_data'] = {
+                'name': exercise.name,
+                'exercise_method': exercise.exercise_method,
+            }
+            recordData.append(cardioData)
 
         data = {
             'stats': DailyExerciseStatsSerializer(dailyStats).data,
@@ -88,7 +105,6 @@ def dailyExerciseStats(request):
         }
 
     return Response(data=data)
-
 
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
@@ -337,6 +353,7 @@ def monthlyExerciseDates(request):
 
     return Response(data=data)
 
+
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def cumulativeTimeStats(request):
@@ -348,25 +365,34 @@ def cumulativeTimeStats(request):
     if recordCount > 1:
         numWeeks = ceil((exerciseStats.last().day -
                          exerciseStats.first().day).days/7)
-    else:
+    elif recordCount == 1:
         numWeeks = 1
-    firstStatDate = exerciseStats.first().day
-    sumExerciseTime = avgWeekExerciseNum = avgExerciseTime = 0
-    avgWeekExerciseNum = round(recordCount / numWeeks, 1)
+    else:
+        numWeeks = 0
+
     exerciseTimeStat = {}
-    physicalStat = []
-    for stat in exerciseStats:
-        sumExerciseTime += stat.total_exercise_time
-        exerciseTimeStat[datetime.datetime.strftime(
-            stat.day, '%Y-%m-%d')] = stat.total_exercise_time
-    avgExerciseTime = round(sumExerciseTime / recordCount)
-    cumulativeStats = {
-        'first_stat_date': datetime.datetime.strftime(firstStatDate, '%Y년 %m월 %d일'),
-        'num_stats': recordCount,
-        'sum_time': sumExerciseTime,
-        'avg_exercise_week': avgWeekExerciseNum,
-        'avg_time': avgExerciseTime,
-    }
+    if exerciseStats.exists():
+        firstStatDate = exerciseStats.first().day
+        sumExerciseTime = avgWeekExerciseNum = avgExerciseTime = 0
+        avgWeekExerciseNum = round(recordCount / numWeeks, 1)
+        physicalStat = []
+        for stat in exerciseStats:
+            sumExerciseTime += stat.total_exercise_time
+            exerciseTimeStat[datetime.datetime.strftime(
+                stat.day, '%Y-%m-%d')] = stat.total_exercise_time
+        avgExerciseTime = round(sumExerciseTime / recordCount)
+        cumulativeStats = {
+            'first_stat_date': datetime.datetime.strftime(firstStatDate, '%Y년 %m월 %d일'),
+            'num_stats': recordCount,
+            'sum_time': sumExerciseTime,
+            'avg_exercise_week': avgWeekExerciseNum,
+            'avg_time': avgExerciseTime,
+        }
+    else:
+        cumulativeStats = {
+            'num_stats': recordCount,
+        }
+
     physicalStatList = PhysicalDataRecord.objects.filter(
         user_id=uuid).order_by('created_at')
     latestPhysicalStat = physicalStatList.last()
@@ -381,6 +407,7 @@ def cumulativeTimeStats(request):
 
     return Response(data=data)
 
+
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def cumulativeExerciseStats(request):
@@ -390,6 +417,7 @@ def cumulativeExerciseStats(request):
     weightTimeDict = {}
     cardioTime = 0
     maxTimeList = [0, 0]
+    data = {}
 
     exerciseRecords = chain(ExerciseRecordCardio.objects.filter(
         user_id=uuid), ExerciseRecordWeight.objects.filter(user_id=uuid))
@@ -442,18 +470,28 @@ def cumulativeExerciseStats(request):
                     maxTimeList[0] = -1
                     maxTimeList[1] = record.record_duration
 
-    categoryStatsCopy = monthlyExerciseCategoryStatsCopy[maxTimeList[0]]
+            categoryStatsCopy = monthlyExerciseCategoryStatsCopy[maxTimeList[0]]
 
-    data = {
-        'exercise_stats': exerciseStats,
-        'category_stats': {
-            'weight': weightTimeDict,
-            'cardio': cardioTime,
-            'copy': categoryStatsCopy,
-        },
-    }
+            data = {
+                'exercise_stats': exerciseStats,
+                'category_stats': {
+                    'weight': weightTimeDict,
+                    'cardio': cardioTime,
+                    'copy': categoryStatsCopy,
+                },
+            }
+    else:
+        print('man')
+        data = {
+            'exercise_stats': exerciseStats,
+            'category_stats': {
+                'weight': weightTimeDict,
+                'cardio': cardioTime,
+            },
+        }
 
     return Response(data=data)
+
 
 @api_view(['GET', 'POST'])
 @permission_classes([IsAuthenticated])
@@ -519,6 +557,7 @@ def physicalData(request):
 
         return Response(data=data)
 
+
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def exerciseStats(request):
@@ -527,36 +566,199 @@ def exerciseStats(request):
     data = {}
     if exercise.type == 0:
         if exercise.exercise_method == 1:
+            count = 0
             records = ExerciseRecordWeight.objects.filter(
-                user_id=uuid, exercise_id=exercise.id)
+                user_id=uuid, exercise_id=exercise.id).order_by('-date')
             maxSetReps = maxTotalReps = 0
-            # maxRepsSetRecordId = maxTotalRepsRecordId = 0
             bestSetRecordData, bestSessionRecordData = ([] for i in range(2))
-            # bestSetDate, bestSessionDate
+            maxRepsStat, totalRepsStat = ({} for i in range(2))
+            currentRecords = []
+
             for record in records:
-                sets = ExerciseRecordWeightSet.objects.filter(
-                    user_id=uuid, exercise_record_weight_id=record)
+                _sets = ExerciseRecordWeightSet.objects.filter(
+                    exercise_record_weight_id=record.id)
                 totalReps = 0
-                for set in sets:
-                    totalReps += set.record_reps
-                    if maxSetReps < set.record_reps:
-                        maxSetReps = set.record_reps
-                        maxRepsSetRecordId = record.id
+                maxReps = 0
+                setData = []
+
+                for _set in _sets:
+                    totalReps += _set.record_reps
+                    if maxReps < _set.record_reps:
+                        maxReps = _set.record_reps
+                    if count < 5:
+                        setData.append(_set.record_reps)
+
+                if maxSetReps < maxReps:
+                    maxSetReps = maxReps
+                    maxRepsSetRecordId = record.id
                 if maxTotalReps < totalReps:
+                    maxTotalReps = totalReps
                     maxTotalRepsRecordId = record.id
+
+                maxRepsStat[datetime.datetime.strftime(
+                    record.date, '%Y-%m-%d')] = maxReps
+                totalRepsStat[datetime.datetime.strftime(
+                    record.date, '%Y-%m-%d')] = totalReps
+
+                if count < 5:
+                    _recordData = ExerciseRecordBodyWeightSerializer(
+                        record).data
+                    _recordData['date'] = record.date
+                    _recordData['sets'] = setData
+                    currentRecords.append(_recordData)
+
+            maxRepsSetRecord = records.get(id=maxRepsSetRecordId)
+            _sets = ExerciseRecordWeightSet.objects.filter(
+                exercise_record_weight_id=maxRepsSetRecord.id)
+            for _set in _sets:
+                bestSetRecordData.append(_set.record_reps)
+
+            maxTotalRepsRecord = records.get(id=maxTotalRepsRecordId)
+            _sets = ExerciseRecordWeightSet.objects.filter(
+                exercise_record_weight_id=maxTotalRepsRecord.id)
+            for _set in _sets:
+                bestSessionRecordData.append(_set.record_reps)
 
             data = {
                 'best_set': {
                     'reps': maxSetReps,
                     'record_data': bestSetRecordData,
-                    'date': datetime.datetime.strftime(ExerciseRecordWeight.objects.get(id=maxRepsSetRecordId).date, '%Y-%m-%d'),
+                    'date': ExerciseRecordWeight.objects.get(id=maxRepsSetRecordId).date,
                 },
                 'best_session': {
                     'total_reps': maxTotalReps,
                     'record_data': bestSessionRecordData,
-                    'date': datetime.datetime.strftime(ExerciseRecordWeight.objects.get(id=maxTotalRepsRecordId).date, '%Y-%m-%d'),
+                    'date': ExerciseRecordWeight.objects.get(id=maxTotalRepsRecordId).date,
                 },
-
+                'max_reps_stat': maxRepsStat,
+                'total_reps_stat': totalRepsStat,
+                'current_records': currentRecords,
             }
+        else:
+            count = 0
+            records = ExerciseRecordWeight.objects.filter(
+                user_id=uuid, exercise_id=exercise.id).order_by('-date')
+            best_one_rm = best_volume = 0
+            maxOneRmStat, totalVolumeStat = ({} for i in range(2))
+            currentRecords = []
+
+            for record in records:
+                _sets = ExerciseRecordWeightSet.objects.filter(
+                    exercise_record_weight_id=record.id)
+
+                setData = []
+
+                if best_one_rm < record.max_one_rm:
+                    best_one_rm = record.max_one_rm
+                    maxOneRmRecordId = record.id
+                if best_volume < record.total_volume:
+                    best_volume = record.total_volume
+                    maxTotalVolumeRecordId = record.id
+
+                maxOneRmStat[datetime.datetime.strftime(
+                    record.date, '%Y-%m-%d')] = record.max_one_rm
+                totalVolumeStat[datetime.datetime.strftime(
+                    record.date, '%Y-%m-%d')] = record.total_volume
+
+                if count < 5:
+                    for _set in _sets:
+                        setData.append({
+                            'record_weight': _set.record_weight,
+                            'record_reps': _set.record_reps,
+                        })
+                    _recordData = ExerciseRecordWeightSerializer(
+                        record).data
+                    _recordData['date'] = record.date
+                    _recordData['sets'] = setData
+                    currentRecords.append(_recordData)
+
+            maxOneRmRecord = records.get(id=maxOneRmRecordId)
+            _sets = ExerciseRecordWeightSet.objects.filter(
+                exercise_record_weight_id=maxOneRmRecord.id)
+            for _set in _sets:
+                if _set.one_rm == best_one_rm:
+                    bestOneRmSetData = {
+                        'one_rm': best_one_rm,
+                        'date': maxOneRmRecord.date,
+                        'set_num': _set.set_num,
+                        'record_weight': _set.record_weight,
+                        'record_reps': _set.record_reps,
+                    }
+                    break
+
+            maxVolumeRecord = records.get(id=maxTotalVolumeRecordId)
+            _sets = ExerciseRecordWeightSet.objects.filter(
+                exercise_record_weight_id=maxVolumeRecord.id)
+            bestVolumeRecordData = {
+                'total_volume': best_volume,
+                'date': maxVolumeRecord.date,
+                'sets': [],
+            }
+            for _set in _sets:
+                bestVolumeRecordData['sets'].append({
+                    'record_weight': _set.record_weight,
+                    'record_reps': _set.record_reps,
+                })
+
+            data = {
+                'best_one_rm': bestOneRmSetData,
+                'best_volume': bestVolumeRecordData,
+                'max_one_rm_stat': maxOneRmStat,
+                'total_volume_stat': totalVolumeStat,
+                'current_records': currentRecords,
+            }
+
+    else:
+        count = 0
+        records = ExerciseRecordCardio.objects.filter(
+            user_id=uuid, exercise_id=exercise.id).order_by('-date')
+        maxCalories = 0
+        distanceStat, durationStat, caloriesStat = ({} for i in range(3))
+        currentRecords = []
+
+        for record in records:
+            if maxCalories < record.record_calories:
+                maxCalories = record.record_calories
+                maxCaloriesRecordId = record.id
+
+            if datetime.datetime.strftime(record.date, '%Y-%m-%d') not in distanceStat:
+                distanceStat[datetime.datetime.strftime(
+                    record.date, '%Y-%m-%d')] = record.record_distance
+            else:
+                distanceStat[datetime.datetime.strftime(
+                    record.date, '%Y-%m-%d')] += record.record_distance
+            if datetime.datetime.strftime(record.date, '%Y-%m-%d') not in durationStat:
+                durationStat[datetime.datetime.strftime(
+                    record.date, '%Y-%m-%d')] = record.record_duration
+            else:
+                durationStat[datetime.datetime.strftime(
+                    record.date, '%Y-%m-%d')] += record.record_duration
+            if datetime.datetime.strftime(record.date, '%Y-%m-%d') not in caloriesStat:
+                caloriesStat[datetime.datetime.strftime(
+                    record.date, '%Y-%m-%d')] = record.record_calories
+            else:
+                caloriesStat[datetime.datetime.strftime(
+                    record.date, '%Y-%m-%d')] += record.record_calories
+
+            if count < 5:
+                _recordData = ExerciseRecordCardioSerializer(record).data
+                _plan = ExercisePlanCardio.objects.get(id=record.exercise_plan_cardio_id)
+                _recordData['date'] = record.date
+                _recordData['target_duration'] = _plan.target_duration
+                _recordData['target_distance'] = _plan.target_distance
+                currentRecords.append(_recordData)
+
+        maxCaloriesRecord = records.get(id=maxCaloriesRecordId)
+        maxCaloriesData = ExerciseRecordCardioSerializer(
+            maxCaloriesRecord).data
+        maxCaloriesData['date'] = maxCaloriesRecord.date
+
+        data = {
+            'max_calories': maxCaloriesData,
+            'record_distance_stat': distanceStat,
+            'record_duration_stat': durationStat,
+            'record_calories_stat': caloriesStat,
+            'current_records': currentRecords,
+        }
 
     return Response(data=data)
