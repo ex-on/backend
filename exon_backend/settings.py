@@ -79,8 +79,9 @@ INSTALLED_APPS = [
     'exercise.apps.ExerciseConfig',
     'community',
     'stats',
+    'notifications',
     'core',
-    'push_notification',
+    'django_apscheduler',
 ]
 
 MIDDLEWARE = [
@@ -114,6 +115,20 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = 'exon_backend.wsgi.application'
+
+# This scheduler config will:
+# - Store jobs in the project database
+# - Execute jobs in threads inside the application process
+SCHEDULER_CONFIG = {
+    "apscheduler.jobstores.default": {
+        "class": "django_apscheduler.jobstores:DjangoJobStore"
+    },
+    'apscheduler.executors.processpool': {
+        "type": "threadpool"
+    },
+}
+
+SCHEDULER_AUTOSTART = True
 
 
 # Database

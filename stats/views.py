@@ -55,12 +55,13 @@ def getWeeklyExerciseStats(uuid, firstDate):
 
     return data
 
+
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def dailyExerciseStats(request):
     uuid = request.user.uuid
     searchDate = datetime.datetime.strptime(request.GET['day'], '%Y/%m/%d')
-    data = {}
+    data = {'empty': True}
     if (DailyExerciseStats.objects.filter(user_id=uuid, day=searchDate).exists()):
         dailyStats = DailyExerciseStats.objects.get(
             user_id=uuid, day=searchDate)
@@ -100,11 +101,13 @@ def dailyExerciseStats(request):
             recordData.append(cardioData)
 
         data = {
+            'empty': False,
             'stats': DailyExerciseStatsSerializer(dailyStats).data,
             'records': recordData,
         }
 
     return Response(data=data)
+
 
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
@@ -132,7 +135,7 @@ def weeklyExerciseStats(request):
     firstDate = datetime.datetime.strptime(
         request.GET['first_day'], '%Y/%m/%d')
     lastDate = firstDate + datetime.timedelta(days=6)
-    data = {}
+    data = {'empty': True}
 
     if (DailyExerciseStats.objects.filter(user_id=uuid, day__range=[firstDate, lastDate]).exists()):
         weekDailyStats = DailyExerciseStats.objects.filter(
@@ -181,6 +184,7 @@ def weeklyExerciseStats(request):
                 previousAvgExerciseTime/previousExerciseDays)
 
         data = {
+            'empty': False,
             'exercise_days': {
                 'current': exerciseDays,
                 'diff': exerciseDays - previousExerciseDays,
@@ -223,7 +227,7 @@ def monthlyExerciseStats(request):
     weightTimeDict = {}
     maxTimeList = [0, 0]
     cardioTime = 0
-    data = {}
+    data = {'empty': True}
     if (DailyExerciseStats.objects.filter(user_id=uuid, day__month=month.month)):
         monthDailyStats = DailyExerciseStats.objects.filter(
             user_id=uuid, day__month=month.month)
@@ -262,8 +266,11 @@ def monthlyExerciseStats(request):
                 if record.record_duration > maxTimeList[1]:
                     maxTimeList[0] = -1
                     maxTimeList[1] = record.record_duration
+        if avgExerciseTime == 0:
+            return Response(data=data)
 
-        categoryStatsCopy = monthlyExerciseCategoryStatsCopy[maxTimeList[0]]
+        if maxTimeList[0] != 0:
+            categoryStatsCopy = monthlyExerciseCategoryStatsCopy[maxTimeList[0]]
 
         for previousDailyStats in previousMonthDailyStats:
             previousAvgExerciseTime += previousDailyStats.total_exercise_time
@@ -285,6 +292,7 @@ def monthlyExerciseStats(request):
                 previousAvgExerciseTime/previousExerciseDays)
 
         data = {
+            'empty': False,
             'exercise_days': {
                 'current': exerciseDays,
                 'diff': exerciseDays - previousExerciseDays,
@@ -742,7 +750,8 @@ def exerciseStats(request):
 
             if count < 5:
                 _recordData = ExerciseRecordCardioSerializer(record).data
-                _plan = ExercisePlanCardio.objects.get(id=record.exercise_plan_cardio_id)
+                _plan = ExercisePlanCardio.objects.get(
+                    id=record.exercise_plan_cardio_id)
                 _recordData['date'] = record.date
                 _recordData['target_duration'] = _plan.target_duration
                 _recordData['target_distance'] = _plan.target_distance

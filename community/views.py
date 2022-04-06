@@ -10,6 +10,8 @@ from rest_framework.permissions import IsAuthenticated
 import json
 from community.serializers import *
 import datetime
+
+from notifications.fcm_notification import hot_post_fcm, hot_qna_fcm, qna_best_answer_fcm, qna_selected_answer_fcm
 from .models import *
 from users.models import *
 from itertools import chain
@@ -187,7 +189,7 @@ def getQnaPreview(request):
         if solved:
             answers = QnaAnswer.objects.filter(qna_id=qna.id)
             for answer in answers:
-                if answer.selected_type == (1 or 3):
+                if answer.selected_type in (1, 3):
                     selectedUserId = answer.user_id
 
             preview['selected_user_data'] = {
@@ -220,6 +222,18 @@ def getHotQnaPreview(request):
             "qna_data": QnaPreviewSerializer(qna).data,
             "count": QnaCountMiniSerializer(QnaCount.objects.get(qna_id=qna.id)).data
         }
+
+        if qna.solved:
+            answers = QnaAnswer.objects.filter(qna_id=qna.id)
+            for answer in answers:
+                if answer.selected_type in (1, 3):
+                    selectedUserId = answer.user_id
+
+            preview['selected_user_data'] = {
+                "username": User.objects.get(uuid=selectedUserId).username,
+                "activity_level": UserDetailsStatic.objects.get(user_id=selectedUserId).activity_level
+            }
+
         return_data.append(preview)
     return Response(return_data)
 
@@ -695,6 +709,13 @@ def updatePostLikeCount(request):
             user_id=uuid, post_id=data['post_id'])
         postCount.save()
         usersLikedPosts.save()
+        if postCount.count_likes == 10:
+            hotPost = Post.objects.get(id=postCount.post_id)
+            if not hotPost.hot:
+                hotPost.hot = True
+                hotPost.save()
+                hot_post_fcm(hotPost.user_id, hotPost.id)
+
     else:
         postCount.count_likes -= 1
         usersLikedPosts = UsersLikedPosts.objects.filter(
@@ -764,6 +785,13 @@ def updateQnaAnswerLikeCount(request):
         qnaAnswerCount.save()
         qnaCount.save()
         usersLikedQnaAnswers.save()
+
+        if qnaCount.count_likes == 10:
+            hotQna = Qna.objects.get(id=qnaCount.qna_id)
+            if not hotQna.hot:
+                hotQna.hot = True
+                hotQna.save()
+                hot_qna_fcm(hotQna.user_id, hotQna.id)
     else:
         qnaAnswerCount.count_likes -= 1
         qnaCount.count_likes -= 1
@@ -943,7 +971,7 @@ def savedPage(request):
         if _qna.solved is True:
             answers = QnaAnswer.objects.filter(qna_id=_qna.id)
             for answer in answers:
-                if answer.selected_type == (1 or 3):
+                if answer.selected_type in (1, 3):
                     selectedUserId = answer.user_id
 
             preview['selected_user_data'] = {
@@ -972,7 +1000,7 @@ def savedPage(request):
         if _qna.solved is True:
             answers = QnaAnswer.objects.filter(qna_id=_qna.id)
             for answer in answers:
-                if answer.selected_type == (1 or 3):
+                if answer.selected_type in (1, 3):
                     selectedUserId = answer.user_id
 
             preview['selected_user_data'] = {
@@ -1043,7 +1071,7 @@ def bookmarkedQnas(request):
         if qna.solved is True:
             answers = QnaAnswer.objects.filter(qna_id=qna.id)
             for answer in answers:
-                if answer.selected_type == (1 or 3):
+                if answer.selected_type in (1, 3):
                     selectedUserId = answer.user_id
 
             preview['selected_user_data'] = {
@@ -1132,7 +1160,7 @@ def savedUserQnas(request):
         if _qna.solved is True:
             answers = QnaAnswer.objects.filter(qna_id=_qna.id)
             for answer in answers:
-                if answer.selected_type == (1 or 3):
+                if answer.selected_type in (1, 3):
                     selectedUserId = answer.user_id
 
             preview['selected_user_data'] = {
@@ -1166,7 +1194,7 @@ def savedUserAnsweredQnas(request):
             },
             "qna_data": QnaPreviewSerializer(_qna).data,
             "answer": answer.content,
-            "answer_count":QnaAnswerCountSerializer(QnaAnswerCount.objects.get(qna_answer_id=answer.id)).data
+            "answer_count": QnaAnswerCountSerializer(QnaAnswerCount.objects.get(qna_answer_id=answer.id)).data
         }
         userAnsweredQnas.append(preview)
 
@@ -1273,6 +1301,8 @@ def qnaSelectAnswer(request):
     selectedAnswer = QnaAnswer.objects.get(id=data['qna_answer_id'])
     selectedAnswer.selected_type = 1
     selectedAnswer.save()
+    qna_selected_answer_fcm(uuid, selectedAnswer.id)
+    
     maxLikes = 0
     bestAnswerId = 0
 
@@ -1285,11 +1315,12 @@ def qnaSelectAnswer(request):
 
     if bestAnswerId != 0:
         bestAnswer = answers.get(id=bestAnswerId)
-        if bestAnswer.id is selectedAnswer.id:
+        if bestAnswer.id == selectedAnswer.id:
             bestAnswer.selected_type = 3
         else:
             bestAnswer.selected_type = 2
         bestAnswer.save()
+        qna_best_answer_fcm(uuid, bestAnswer.id)
 
     qna = Qna.objects.get(id=selectedAnswer.qna_id)
     qna.solved = True
@@ -1297,7 +1328,7 @@ def qnaSelectAnswer(request):
 
     return Response(status=status.HTTP_200_OK)
 
- 
+
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def delete(request):
@@ -1385,8 +1416,10 @@ def report(request):
         instance = UsersReportedQnaAnswerCommentReplies(
             user_id=uuid, qna_answer_comment_reply_id=_id)
 
-    count.count_reports += 1
-    count.save()
-    instance.save()
-
-    return HttpResponse(status=status.HTTP_200_OK)
+    try:
+        instance.save()
+        count.count_reports += 1
+        count.save()
+        return HttpResponse(status=status.HTTP_200_OK)
+    except:
+        return HttpResponse(status=status.HTTP_208_ALREADY_REPORTED)
