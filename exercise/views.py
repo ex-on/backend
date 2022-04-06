@@ -9,9 +9,12 @@ from rest_framework.permissions import IsAuthenticated
 import datetime
 import json
 from django.utils.dateparse import parse_datetime
+
+from notifications.fcm_notification import exercise_attendance_fcm
 from .models import *
 from stats.models import DailyExerciseStats, PhysicalDataRecord
 from .serializers import ExerciseDetailsSerializer, ExercisePlanCardioSerializer, ExercisePlanWeightSerializer, ExercisePlanWeightSetSerializer, ExerciseRecordBodyWeightSerializer, ExerciseRecordCardioSerializer, ExerciseRecordWeightSerializer, ExerciseSerializer, ExerciseTimeSerializer, ExerciseRecordWeightSetSerializer
+
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
@@ -24,6 +27,7 @@ def getAllExercise(request):
     }
     return Response(data)
 
+
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def getExerciseByTargetMuscle(request):
@@ -32,6 +36,7 @@ def getExerciseByTargetMuscle(request):
     serializer = ExerciseSerializer(exerciseList, many=True)
     return Response(serializer.data)
 
+
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def getExerciseByExerciseMethod(request):
@@ -39,6 +44,7 @@ def getExerciseByExerciseMethod(request):
     exerciseList = Exercise.objects.filter(exercise_method=_exercise_method)
     serializer = ExerciseSerializer(exerciseList, many=True)
     return Response(serializer.data)
+
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
@@ -50,6 +56,7 @@ def getExerciseByTargetMuscleExerciseMethod(request):
     serializer = ExerciseSerializer(exerciseList, many=True)
     return Response(serializer.data)
 
+
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def getExerciseDetails(request):
@@ -57,6 +64,7 @@ def getExerciseDetails(request):
     details = ExerciseDetails.objects.filter(exercise_id=_exercise_id)
     serializer = ExerciseDetailsSerializer(details, many=True)
     return Response(serializer.data)
+
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
@@ -141,6 +149,7 @@ def getExerciseStatusWeek(request):
             }
     return Response(weekStatus)
 
+
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def getExerciseStatusDate(request):
@@ -213,6 +222,7 @@ def getExerciseStatusDate(request):
 
     return Response(returnData)
 
+
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def getExercisePlanWeightSets(request):
@@ -222,6 +232,7 @@ def getExercisePlanWeightSets(request):
     serializer = ExercisePlanWeightSetSerializer(sets, many=True)
     return Response(serializer.data)
 
+
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def getExercisePlanCardio(request):
@@ -230,6 +241,7 @@ def getExercisePlanCardio(request):
         exercise_plan_cardio_id=_exercise_plan_cardio_id)
     serializer = ExercisePlanWeightSetSerializer(sets, many=True)
     return Response(serializer.data)
+
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
@@ -241,6 +253,7 @@ def getUserPlanCardioDate(request):
     serializer = ExercisePlanCardioSerializer(plans, many=True)
     return Response(serializer.data)
 
+
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def getUserRecordWeight(request):
@@ -249,6 +262,7 @@ def getUserRecordWeight(request):
         user_id=uuid).order_by('-date')
     serializer = ExerciseRecordWeightSerializer(record, many=True)
     return Response(serializer.data)
+
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
@@ -260,6 +274,7 @@ def getUserRecordWeightDate(request):
     serializer = ExerciseRecordWeightSerializer(record, many=True)
     return Response(serializer.data)
 
+
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def getUserRecordWeightTargetMuscle(request):
@@ -270,6 +285,7 @@ def getUserRecordWeightTargetMuscle(request):
     serializer = ExerciseRecordWeightSerializer(record, many=True)
     return Response(serializer.data)
 
+
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def getUserRecordWeightSets(request):
@@ -279,6 +295,7 @@ def getUserRecordWeightSets(request):
     serializer = ExerciseRecordWeightSetSerializer(record_sets, many=True)
     return Response(serializer.data)
 
+
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def getUserRecordCardio(request):
@@ -286,6 +303,7 @@ def getUserRecordCardio(request):
     record = ExerciseRecordCardio.objects.filter(user_id=_user_id)
     serializer = ExerciseRecordCardioSerializer(record, many=True)
     return Response(serializer.data)
+
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
@@ -296,6 +314,7 @@ def getUserRecordCardioDate(request):
     record = ExerciseRecordCardio.objects.filter(user_id=_user_id, date=_date)
     serializer = ExerciseRecordCardioSerializer(record, many=True)
     return Response(serializer.data)
+
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
@@ -320,6 +339,7 @@ def getExerciseTime(request):
     serializer = ExerciseTimeSerializer(duration)
     return Response(serializer.data)
 
+
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def postExercisePlanWeight(request):
@@ -336,6 +356,7 @@ def postExercisePlanWeight(request):
         data.save()
     return HttpResponse(status=200)
 
+
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def postExercisePlanCardio(request):
@@ -345,6 +366,7 @@ def postExercisePlanCardio(request):
                                 target_distance=data['target_distance'], target_duration=data['target_duration'])
     record.save()
     return HttpResponse(status=200)
+
 
 @api_view(['GET', 'POST'])
 @permission_classes([IsAuthenticated])
@@ -391,8 +413,10 @@ def exerciseRecordWeight(request):
             dailyRecord = DailyExerciseStats(day=record.date, user_id=uuid, total_exercise_time=record.exercise_time,
                                              total_volume=totalVolume, total_sets=len(sets), max_one_rm=maxOneRm)
             dailyRecord.save()
+            exercise_attendance_fcm(uuid)
 
         return Response(status=200, data=record.id)
+        
     else:
         exerciseRecordWeightId = int(request.GET['id'])
         record = ExerciseRecordWeight.objects.get(id=exerciseRecordWeightId)
@@ -402,6 +426,7 @@ def exerciseRecordWeight(request):
             'record_data': ExerciseRecordWeightSerializer(record).data if exercise.exercise_method != 1 else ExerciseRecordBodyWeightSerializer(record).data,
         }
         return Response(data=data)
+
 
 @api_view(['GET', 'POST'])
 @permission_classes([IsAuthenticated])

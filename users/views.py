@@ -141,15 +141,35 @@ def cognitoUserPhysicalInfo(request):
     return HttpResponse(status=status.HTTP_201_CREATED)
 
 
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def fcmToken(request):
+    uuid = request.user.uuid
+    data = json.loads(request.body)
+    if UserDetailsStatic.objects.filter(user_id=uuid).exists():
+        staticData = UserDetailsStatic.objects.get(user_id=uuid)
+        staticData.fcm_token = data['token']
+        staticData.save()
+
+    return HttpResponse(status=status.HTTP_200_OK)
+    
+
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def profileStats(request):
     uuid = request.user.uuid
     staticData = UserDetailsStatic.objects.get(user_id=uuid)
-    countData = UserDetailsCount.objects.get(user_id=uuid)
+    # countData = UserDetailsCount.objects.get(user_id=uuid)
     monthlyExerciseData, communityData, physicalData = ({} for i in range(3))
     exercisePlans = chain(ExercisePlanWeight.objects.filter(
         user_id=uuid), ExercisePlanCardio.objects.filter(user_id=uuid))
+
+    everyCountData = UserDetailsCount.objects.order_by('-count_accepted_answers')
+
+    for index, item in enumerate(everyCountData):
+        if item.user_id == uuid:
+            countData = item 
+            numAcceptedPercentage = round(index + 1/ UserDetailsCount.objects.count() * 100, 1)
 
     for plan in exercisePlans:
         date = datetime.datetime.strftime(
@@ -176,6 +196,7 @@ def profileStats(request):
             'qnas': countData.count_uploaded_qnas,
             'answers': countData.count_uploaded_answers,
             'accepted_answers': countData.count_accepted_answers,
+            'num_accepted_percentage': numAcceptedPercentage,
             'acception_rate': countData.answer_acception_rate,
             'privacy': False,
         }

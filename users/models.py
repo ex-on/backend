@@ -77,6 +77,7 @@ class UserDetailsStatic(models.Model):
     height = models.FloatField(null=True)
     profile_community_privacy = models.BooleanField(default=False)
     profile_physical_data_privacy = models.BooleanField(default=False)
+    fcm_token = models.CharField(max_length=200, null=True)
     intro_text = models.CharField(max_length=30, blank=True, null=True)
 
     class Meta:
