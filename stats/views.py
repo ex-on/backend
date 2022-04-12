@@ -8,6 +8,7 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from dateutil.relativedelta import relativedelta
 import datetime
+import dateutil
 import json
 from stats.constants import getStandardBmi, getStandardBodyFatPercentage
 
@@ -340,11 +341,18 @@ def monthlyExerciseStats(request):
 def monthlyExerciseDates(request):
     uuid = request.user.uuid
     searchMonth = datetime.datetime.strptime(request.GET['month'], '%Y/%m')
+    previousMonth = searchMonth - \
+        dateutil.relativedelta.relativedelta(months=1)
+    priorMonth = searchMonth + dateutil.relativedelta.relativedelta(months=1)
     data = []
+    # exerciseRecordWeight = ExerciseRecordWeight.objects.filter(
+    #     user_id=uuid, date__year=searchMonth.year, date__month=searchMonth.month).order_by('date')
+    # exerciseRecordCardio = ExerciseRecordCardio.objects.filter(
+    #     user_id=uuid, date__year=searchMonth.year, date__month=searchMonth.month).order_by('date')
     exerciseRecordWeight = ExerciseRecordWeight.objects.filter(
-        user_id=uuid, date__year=searchMonth.year, date__month=searchMonth.month).order_by('date')
+        user_id=uuid, date__year=searchMonth.year, date__month__in=[previousMonth.month, searchMonth.month, priorMonth.month]).order_by('date')
     exerciseRecordCardio = ExerciseRecordCardio.objects.filter(
-        user_id=uuid, date__year=searchMonth.year, date__month=searchMonth.month)
+        user_id=uuid, date__year=searchMonth.year, date__month__in=[previousMonth.month, searchMonth.month, priorMonth.month]).order_by('date')
     exerciseRecords = chain(exerciseRecordWeight, exerciseRecordCardio)
     for record in exerciseRecords:
         if isinstance(record, ExerciseRecordWeight):

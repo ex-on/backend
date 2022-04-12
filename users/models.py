@@ -61,7 +61,6 @@ class UserDetailsCount(models.Model):
     count_uploaded_qnas = models.IntegerField(default=0)
     count_uploaded_answers = models.IntegerField(default=0)
     count_accepted_answers = models.IntegerField(default=0)
-    answer_acception_rate = models.FloatField(default = 0)
 
     class Meta:
         managed = True
