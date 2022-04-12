@@ -7,11 +7,11 @@ from rest_framework.response import Response
 from rest_framework.decorators import api_view, permission_classes
 import json
 from rest_framework.permissions import IsAuthenticated
-import json
 from community.serializers import *
 import datetime
+from core.utils.transformers import timeCalculator
 
-from notifications.fcm_notification import hot_post_fcm, hot_qna_fcm, qna_best_answer_fcm, qna_selected_answer_fcm
+from notifications.fcm_notification import hot_post_fcm, hot_qna_fcm, post_comment_fcm, post_reply_fcm, qna_answer_comment_fcm, qna_answer_fcm, qna_best_answer_fcm, qna_selected_answer_fcm
 from .models import *
 from users.models import *
 from itertools import chain
@@ -20,23 +20,6 @@ from django.db.models import Q
 # Create your views here.
 
 ############게시판 메인화면###############
-
-
-def zeroAdder(num):
-    if num < 10:
-        return "0" + str(num)
-    else:
-        return str(num)
-
-
-def timeCalculator(date_time):
-    delta = (datetime.datetime.now() - date_time.replace(tzinfo=None)).seconds
-    if datetime.date.today() != date_time.date():
-        return zeroAdder(date_time.month) + "/" + zeroAdder(date_time.day)
-    elif delta // 3600 > 0:
-        return zeroAdder(date_time.hour) + ":" + zeroAdder(date_time.minute)
-    else:
-        return str(delta // 60) + "분 전"
 
 
 def buildPostPreview(post):
@@ -478,13 +461,20 @@ def getQnaUserStatus(request):
 @permission_classes([IsAuthenticated])
 def postPost(request):
     uuid = request.user.uuid
-    request = json.loads(request.body)
-    post = Post(user_id=uuid, title=request['title'],
-                content=request['content'], modified=False, type=request['type'])
+    data = json.loads(request.body)
+
+    post = Post(user_id=uuid, title=data['title'],
+                content=data['content'], modified=False, type=data['type'])
     post.save()
+
     postCount = PostCount(
         post_id=post.id, count_likes=0, count_comments=0, count_saved=0, count_reports=0)
     postCount.save()
+
+    userCount = UserDetailsCount.objects.get(user_id=uuid)
+    userCount.count_uploaded_posts += 1
+    userCount.save()
+
     return HttpResponse(status=200)
 
 
@@ -502,6 +492,9 @@ def postPostComment(request):
     postCount = PostCount.objects.get(post_id=data['post_id'])
     postCount.count_comments += 1
     postCount.save()
+
+    post_comment_fcm(uuid, data['post_id'], data['content'])
+    
     return HttpResponse(status=200)
 
 
@@ -519,6 +512,9 @@ def postPostCommentReply(request):
     postCount = PostCount.objects.get(post_id=data['post_id'])
     postCount.count_comments += 1
     postCount.save()
+
+    post_reply_fcm(uuid, data['post_id'], data['post_comment_id'], data['content'])
+    
     return HttpResponse(status=200)
 
 
@@ -526,13 +522,16 @@ def postPostCommentReply(request):
 @permission_classes([IsAuthenticated])
 def postQna(request):
     uuid = request.user.uuid
-    request = json.loads(request.body)
-    qna = Qna(user_id=uuid, title=request['title'], content=request['content'],
+    data = json.loads(request.body)
+    qna = Qna(user_id=uuid, title=data['title'], content=data['content'],
               modified=False, solved=False)
     qna.save()
     qnaCount = QnaCount(qna_id=qna.id,
                         count_likes=0, count_answers=0, count_saved=0, count_comments=0, count_reports=0)
     qnaCount.save()
+    userCount = UserDetailsCount.objects.get(user_id=uuid)
+    userCount.count_uploaded_qnas += 1
+    userCount.save()
     return HttpResponse(status=200)
 
 
@@ -540,17 +539,25 @@ def postQna(request):
 @permission_classes([IsAuthenticated])
 def postQnaAnswer(request):
     uuid = request.user.uuid
-    request = json.loads(request.body)
-    answer = QnaAnswer(user_id=uuid, qna_id=request['qna_id'],
-                       content=request['content'])
+    data = json.loads(request.body)
+
+    answer = QnaAnswer(user_id=uuid, qna_id=data['qna_id'],
+                       content=data['content'])
     answer.save()
-    qnaCount = QnaCount.objects.get(qna_id=request['qna_id'])
+
+    qnaCount = QnaCount.objects.get(qna_id=data['qna_id'])
     qnaCount.count_answers += 1
     qnaCount.save()
 
     answerCount = QnaAnswerCount(
         qna_answer_id=answer.id, count_likes=0, count_comments=0, count_reports=0)
     answerCount.save()
+
+    userCount = UserDetailsCount.objects.get(user_id=uuid)
+    userCount.count_uploaded_answers += 1
+    userCount.save()
+
+    qna_answer_fcm(data['qna_id'], data['content'])
 
     return HttpResponse(status=200)
 
@@ -559,10 +566,10 @@ def postQnaAnswer(request):
 @permission_classes([IsAuthenticated])
 def postQnaAnswerComment(request):
     uuid = request.user.uuid
-    request = json.loads(request.body)
+    data = json.loads(request.body)
 
     comment = QnaAnswerComment(
-        user_id=uuid, qna_answer_id=request['answer_id'], content=request['content'])
+        user_id=uuid, qna_answer_id=data['answer_id'], content=data['content'])
     comment.save()
 
     commentCount = QnaAnswerCommentCount(
@@ -570,14 +577,17 @@ def postQnaAnswerComment(request):
     commentCount.save()
 
     answerCount = QnaAnswerCount.objects.get(
-        qna_answer_id=request['answer_id'])
+        qna_answer_id=data['answer_id'])
     answerCount.count_comments += 1
     answerCount.save()
 
-    qnaAnswer = QnaAnswer.objects.get(id=request['answer_id'])
+    qnaAnswer = QnaAnswer.objects.get(id=data['answer_id'])
     qnaCount = QnaCount.objects.get(qna_id=qnaAnswer.qna_id)
     qnaCount.count_comments += 1
     qnaCount.save()
+
+    qna_answer_comment_fcm(uuid, qnaAnswer.qna_id, data['answer_id'], data['content'])
+    
     return HttpResponse(status=200)
 
 
@@ -965,7 +975,7 @@ def savedPage(request):
             },
 
             "qna_data": QnaPreviewSerializer(_qna).data,
-            "answer": QnaAnswer.objects.get(qna_id=_qna.id, selected_type=1).content if _qna.solved else None,
+            "answer": QnaAnswer.objects.get(qna_id=_qna.id, selected_type__in=[1,3]).content if _qna.solved else None,
             "count": QnaCountMiniSerializer(QnaCount.objects.get(qna_id=_qna.id)).data
         }
         if _qna.solved is True:
@@ -1153,7 +1163,7 @@ def savedUserQnas(request):
                 "activity_level": UserDetailsStatic.objects.get(user_id=_qna.user_id).activity_level
             },
             "qna_data": QnaPreviewSerializer(_qna).data,
-            "answer": QnaAnswer.objects.get(qna_id=_qna.id, selected_type=1).content if _qna.solved else None,
+            "answer": QnaAnswer.objects.get(qna_id=_qna.id, selected_type__in=[1,3]).content if _qna.solved else None,
             "count": QnaCountMiniSerializer(QnaCount.objects.get(qna_id=_qna.id)).data
         }
 
@@ -1301,7 +1311,8 @@ def qnaSelectAnswer(request):
     selectedAnswer = QnaAnswer.objects.get(id=data['qna_answer_id'])
     selectedAnswer.selected_type = 1
     selectedAnswer.save()
-    qna_selected_answer_fcm(uuid, selectedAnswer.id)
+
+    qna_selected_answer_fcm(selectedAnswer.user_id, selectedAnswer.qna_id)
     
     maxLikes = 0
     bestAnswerId = 0
@@ -1320,18 +1331,22 @@ def qnaSelectAnswer(request):
         else:
             bestAnswer.selected_type = 2
         bestAnswer.save()
-        qna_best_answer_fcm(uuid, bestAnswer.id)
+        qna_best_answer_fcm(bestAnswer.user_id, bestAnswer.qna_id)
 
     qna = Qna.objects.get(id=selectedAnswer.qna_id)
     qna.solved = True
     qna.save()
+
+    userCount = UserDetailsCount.objects.get(user_id=selectedAnswer.user_id)
+    userCount.count_accepted_answers += 1
+    userCount.save()
 
     return Response(status=status.HTTP_200_OK)
 
 
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
-def delete(request):
+def deleteInstance(request):
     data = json.loads(request.body)
     category = data['category']
 

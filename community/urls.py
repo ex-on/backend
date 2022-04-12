@@ -67,6 +67,6 @@ urlpatterns = [
     path('update_report_qna_answer_comment_reply',
          updateUserReportedQnaAnswerCommentReplies),
     ########게시물 삭제#######################
-    path('delete', delete),
+    path('delete', deleteInstance),
     path('report', report),
 ]

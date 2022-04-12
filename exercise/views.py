@@ -462,6 +462,7 @@ def exerciseRecordCardio(request):
             if record.record_distance is not None:
                 dailyRecord.total_distance += record.record_distance
             dailyRecord.save()
+            exercise_attendance_fcm(uuid)
 
         return Response(status=200, data=record.id)
     else:

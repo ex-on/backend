@@ -1,5 +1,6 @@
-from itertools import chain
+from itertools import chain, count
 from django.http.response import HttpResponse
+from django.db.models import Window, F
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.decorators import api_view, authentication_classes, permission_classes
@@ -7,6 +8,7 @@ from rest_framework.permissions import IsAuthenticated
 from exercise.models import ExercisePlanCardio, ExercisePlanWeight, ExerciseRecordCardio, ExerciseRecordWeight
 from exon_backend.settings import COGNITO_POOL_DOMAIN, COGNITO_AWS_REGION
 from stats.models import DailyExerciseStats, PhysicalDataRecord
+from django.db.models.functions.window import PercentRank
 from .models import *
 import json
 import datetime
@@ -117,8 +119,10 @@ def cognitoUserPhysicalInfo(request):
 
     height = float(data['height']) / 100
     weight = float(data['weight'])
-    muscleMass = float(data['muscle_mass']) if data['muscle_mass'] is not None else None
-    bodyFatPercentage = float(data['body_fat_percentage']) if data['body_fat_percentage'] is not None else None
+    muscleMass = float(data['muscle_mass']
+                       ) if data['muscle_mass'] is not None else None
+    bodyFatPercentage = float(
+        data['body_fat_percentage']) if data['body_fat_percentage'] is not None else None
 
     userDetailsStatic = UserDetailsStatic.objects.get(user_id=uuid)
     userDetailsStatic.height = float(data['height'])
@@ -152,7 +156,7 @@ def fcmToken(request):
         staticData.save()
 
     return HttpResponse(status=status.HTTP_200_OK)
-    
+
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
@@ -164,12 +168,14 @@ def profileStats(request):
     exercisePlans = chain(ExercisePlanWeight.objects.filter(
         user_id=uuid), ExercisePlanCardio.objects.filter(user_id=uuid))
 
-    everyCountData = UserDetailsCount.objects.order_by('-count_accepted_answers')
+    countData = UserDetailsCount.objects.filter(user_id=uuid).annotate(
+            num_accepted_percentage=Window(
+                expression=PercentRank(),
+                order_by=F('count_accepted_answers').desc()
+            ),
+        ).get()
 
-    for index, item in enumerate(everyCountData):
-        if item.user_id == uuid:
-            countData = item 
-            numAcceptedPercentage = round(index + 1/ UserDetailsCount.objects.count() * 100, 1)
+    numAcceptedPercentage = countData.num_accepted_percentage
 
     for plan in exercisePlans:
         date = datetime.datetime.strftime(
@@ -197,7 +203,7 @@ def profileStats(request):
             'answers': countData.count_uploaded_answers,
             'accepted_answers': countData.count_accepted_answers,
             'num_accepted_percentage': numAcceptedPercentage,
-            'acception_rate': countData.answer_acception_rate,
+            'acception_rate': round(countData.count_accepted_answers/countData.count_uploaded_answers * 100, 1) if countData.count_uploaded_answers != 0 else 0,
             'privacy': False,
         }
 

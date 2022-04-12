@@ -15,6 +15,7 @@ class Post(AbstractBaseModel):
     modified = models.BooleanField(default=False)
     hot = models.BooleanField(default=False)
     type = models.IntegerField()
+    # 1: 자유, 2: 정보
 
     class Meta:
         managed = True

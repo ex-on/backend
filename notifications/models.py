@@ -12,6 +12,7 @@ class Notification(models.Model):
   # 1: Exercise notifications
   # 2: Post notifications
   # 3: Q&A notifications
+  # 4: Activity level notifications
   link_id = models.IntegerField(null=True)
 
   class Meta:
