@@ -11,7 +11,7 @@ from community.serializers import *
 import datetime
 from core.utils.transformers import timeCalculator
 
-from notifications.fcm_notification import hot_post_fcm, hot_qna_fcm, post_comment_fcm, post_reply_fcm, qna_answer_comment_fcm, qna_answer_fcm, qna_best_answer_fcm, qna_selected_answer_fcm
+from notifications.fcm_notification import hot_post_fcm, hot_qna_fcm, post_comment_fcm, post_reply_fcm, qna_comment_fcm, qna_reply_fcm, qna_answer_fcm, qna_best_answer_fcm, qna_selected_answer_fcm
 from .models import *
 from users.models import *
 from itertools import chain
@@ -586,7 +586,7 @@ def postQnaAnswerComment(request):
     qnaCount.count_comments += 1
     qnaCount.save()
 
-    qna_answer_comment_fcm(uuid, qnaAnswer.qna_id, data['answer_id'], data['content'])
+    qna_comment_fcm(uuid, qnaAnswer.qna_id, data['answer_id'], data['content'])
     
     return HttpResponse(status=200)
 
@@ -595,23 +595,26 @@ def postQnaAnswerComment(request):
 @permission_classes([IsAuthenticated])
 def postQnaAnswerCommentReply(request):
     uuid = request.user.uuid
-    request = json.loads(request.body)
-    reply = QnaAnswerCommentReply(user_id=uuid, qna_answer_id=request['answer_id'],
-                                  qna_answer_comment_id=request['qna_answer_comment_id'], content=request['content'])
+    data = json.loads(request.body)
+    reply = QnaAnswerCommentReply(user_id=uuid, qna_answer_id=data['answer_id'],
+                                  qna_answer_comment_id=data['qna_answer_comment_id'], content=data['content'])
     reply.save()
     replyCount = QnaAnswerCommentReplyCount(
         qna_answer_comment_reply_id=reply.id)
     replyCount.save()
 
     answerCount = QnaAnswerCount.objects.get(
-        qna_answer_id=request['answer_id'])
+        qna_answer_id=data['answer_id'])
     answerCount.count_comments += 1
     answerCount.save()
 
-    qnaAnswer = QnaAnswer.objects.get(id=request['answer_id'])
+    qnaAnswer = QnaAnswer.objects.get(id=data['answer_id'])
     qnaCount = QnaCount.objects.get(qna_id=qnaAnswer.qna_id)
     qnaCount.count_comments += 1
     qnaCount.save()
+
+    qna_reply_fcm(uuid, qnaCount.qna_id, answerCount.qna_answer_id,data['qna_answer_comment_id'], data['content'] )
+    
     return HttpResponse(status=200)
 
 ############ 게시물 수정 #######################
