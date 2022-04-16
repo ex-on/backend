@@ -5,8 +5,10 @@ from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.decorators import api_view, authentication_classes, permission_classes
 from rest_framework.permissions import IsAuthenticated
+from community.serializers import UserProfileSerializer
 from exercise.models import ExercisePlanCardio, ExercisePlanWeight, ExerciseRecordCardio, ExerciseRecordWeight
 from exon_backend.settings import COGNITO_POOL_DOMAIN, COGNITO_AWS_REGION
+from notifications.models import UserNotiReception
 from stats.models import DailyExerciseStats, PhysicalDataRecord
 from django.db.models.functions.window import PercentRank
 from .models import *
@@ -31,6 +33,7 @@ def checkAvailableEmail(request):
 def checkAvailableUsername(request):
     username = request.GET['username']
     isUsernameAvailable = not User.objects.filter(username=username).exists()
+
     return Response(isUsernameAvailable)
 
 
@@ -60,9 +63,34 @@ def getUserInfo(request):
             userInfo = {
                 'username': User.objects.get(uuid=uuid).username,
                 'activity_level': UserDetailsStatic.objects.get(user_id=uuid).activity_level,
-                'created_at': User.objects.get(uuid=uuid).created_at
+                'email': User.objects.get(uuid=uuid).email,
+                'created_at': User.objects.get(uuid=uuid).created_at,
+                'auth_provider': UserDetailsStatic.objects.get(user_id=uuid).auth_provider,
             }
+
         return Response(userInfo)
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def updateUsername(request):
+    uuid = request.user.uuid
+    data = json.loads(request.body)
+    user = User.objects.get(uuid=uuid)
+    user.username = data['username']
+    user.save()
+
+    return Response(status=status.HTTP_200_OK)
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def checkPassword(request):
+    uuid = request.user.uuid
+    user = User.objects.get(uuid=uuid)
+    passwordValid = user.password == request.GET['password']
+
+    return Response(data=passwordValid)
 
 
 @api_view(['POST'])
@@ -77,36 +105,46 @@ def registerCognitoUserInfo(request):
     user = User.objects.get(uuid=uuid)
     print(request.META)
 
-    if auth_provider == 'Social':
+    if auth_provider == ('Facebook' or 'Google'):
         endpoint = f"https://{COGNITO_POOL_DOMAIN}.auth.{COGNITO_AWS_REGION}.amazoncognito.com/oauth2/userInfo"
         userInfo = requests.get(
             endpoint, headers={'Authorization': 'Bearer ' + str(request.auth)})
         print(json.loads(userInfo.content))
         email = json.loads(userInfo.content)['email']
+        if auth_provider == 'Facebook':
+            authProvider = 3
+        else:
+            authProvider = 2
     elif auth_provider == 'Kakao':
         email = data['email']
         user.email = email
+        authProvider = 1
     else:
         email = data['email']
         phone_number = data['phone_number']
         user.phone_number = phone_number
+        authProvider = 0
 
     user.email = email
     user.username = username
+    user.auth_provider = authProvider
 
     if UserDetailsStatic.objects.filter(user_id=uuid).exists():
         userDetailsStatic = UserDetailsStatic.objects.get(user_id=uuid)
         userDetailsStatic.birth_date = birth_date
         userDetailsStatic.gender = gender
+        userDetailsStatic.auth_provider = authProvider
     else:
         userDetailsStatic = UserDetailsStatic(
-            user_id=uuid, birth_date=birth_date, gender=gender)
+            user_id=uuid, birth_date=birth_date, gender=gender, auth_provider=authProvider)
 
     userDetailsCount = UserDetailsCount(user_id=uuid)
+    userNotiReception = UserNotiReception(user_id=uuid) 
 
     user.save()
     userDetailsStatic.save()
     userDetailsCount.save()
+    userNotiReception.save()
 
     return HttpResponse(status=status.HTTP_201_CREATED)
 
@@ -162,18 +200,24 @@ def fcmToken(request):
 @permission_classes([IsAuthenticated])
 def profileStats(request):
     uuid = request.user.uuid
-    staticData = UserDetailsStatic.objects.get(user_id=uuid)
-    # countData = UserDetailsCount.objects.get(user_id=uuid)
+    if 'username' not in request.GET:
+        userId = uuid
+    else:
+        userId = User.objects.get(username=request.GET['username']).uuid
+
+    staticData = UserDetailsStatic.objects.get(user_id=userId)
+    privacy = -1 if 'username' not in request.GET else staticData.profile_privacy
+
     monthlyExerciseData, communityData, physicalData = ({} for i in range(3))
     exercisePlans = chain(ExercisePlanWeight.objects.filter(
-        user_id=uuid), ExercisePlanCardio.objects.filter(user_id=uuid))
+        user_id=userId), ExercisePlanCardio.objects.filter(user_id=userId))
 
-    countData = UserDetailsCount.objects.filter(user_id=uuid).annotate(
-            num_accepted_percentage=Window(
-                expression=PercentRank(),
-                order_by=F('count_accepted_answers').desc()
-            ),
-        ).get()
+    countData = UserDetailsCount.objects.filter(user_id=userId).annotate(
+        num_accepted_percentage=Window(
+            expression=PercentRank(),
+            order_by=F('count_accepted_answers').desc()
+        ),
+    ).get()
 
     numAcceptedPercentage = countData.num_accepted_percentage
 
@@ -192,11 +236,7 @@ def profileStats(request):
             else:
                 monthlyExerciseData[date] = 1
 
-    if staticData.profile_community_privacy:
-        communityData = {
-            'privacy': True,
-        }
-    else:
+    if privacy in (-1, 0, 1):
         communityData = {
             'posts': countData.count_uploaded_posts,
             'qnas': countData.count_uploaded_qnas,
@@ -204,17 +244,14 @@ def profileStats(request):
             'accepted_answers': countData.count_accepted_answers,
             'num_accepted_percentage': numAcceptedPercentage,
             'acception_rate': round(countData.count_accepted_answers/countData.count_uploaded_answers * 100, 1) if countData.count_uploaded_answers != 0 else 0,
-            'privacy': False,
-        }
-
-    if staticData.profile_physical_data_privacy:
-        physicalData = {
-            'privacy': True,
         }
     else:
-        physicalDataRecord = PhysicalDataRecord.objects.filter(
-            user_id=uuid).order_by('-created_at').first()
+        communityData = {}
 
+    physicalDataRecord = PhysicalDataRecord.objects.filter(
+        user_id=userId).order_by('-created_at').first()
+
+    if privacy in (-1, 0, 2):
         physicalData = {
             'height': staticData.height,
             'weight': physicalDataRecord.weight,
@@ -222,21 +259,70 @@ def profileStats(request):
             'body_fat_percentage': physicalDataRecord.body_fat_percentage,
             'bmi': physicalDataRecord.bmi,
             'inbody_score': physicalDataRecord.inbody_score,
-            'privacy': False,
         }
+    else:
+        physicalData = {}
 
     data = {
         'activity_level': {
             'level': staticData.activity_level,
             'protein': countData.count_protein,
-
         },
         'monthly_exercise': monthlyExerciseData,
         'community': communityData,
         'physical_data': physicalData,
+        'privacy': privacy,
     }
 
+    if 'username' in request.GET:
+        data['user'] = {
+            'username': request.GET['username'],
+            'activity_level': UserDetailsStatic.objects.get(user_id=userId).activity_level,
+            'created_at': User.objects.get(uuid=userId).created_at,
+        }
+
     return Response(data=data)
+
+
+@api_view(['GET', 'POST'])
+@permission_classes([IsAuthenticated])
+def profilePrivacy(request):
+    uuid = request.user.uuid
+
+    if request.method == 'POST':
+        data = json.loads(request.body)
+        userStatic = UserDetailsStatic.objects.get(user_id=uuid)
+
+        if data['privacy'] == 0:
+            if userStatic.profile_privacy != 0:
+                userStatic.profile_privacy = 0
+            elif userStatic.profile_privacy == 0:
+                userStatic.profile_privacy = 3
+        elif data['privacy'] == 1:
+            if userStatic.profile_privacy == 0:
+                userStatic.profile_privacy = 2
+            elif userStatic.profile_privacy == 1:
+                userStatic.profile_privacy = 3
+            elif userStatic.profile_privacy == 2:
+                userStatic.profile_privacy = 0
+            elif userStatic.profile_privacy == 3:
+                userStatic.profile_privacy = 1
+        elif data['privacy'] == 2:
+            if userStatic.profile_privacy == 0:
+                userStatic.profile_privacy = 1
+            elif userStatic.profile_privacy == 1:
+                userStatic.profile_privacy = 0
+            elif userStatic.profile_privacy == 2:
+                userStatic.profile_privacy = 3
+            elif userStatic.profile_privacy == 3:
+                userStatic.profile_privacy = 2
+
+        userStatic.save()
+
+        return Response(status=status.HTTP_200_OK)
+
+    else:
+        return Response(UserDetailsStatic.objects.get(user_id=uuid).profile_privacy)
 
 
 @api_view(['GET'])

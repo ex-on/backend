@@ -5,4 +5,5 @@ urlpatterns = [
     path('list', notificationList),
     path('read', notificationRead),
     path('delete', deleteNotification),
+    path('settings', userNotiSettings),
 ]

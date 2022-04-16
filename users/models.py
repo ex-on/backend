@@ -74,10 +74,12 @@ class UserDetailsStatic(models.Model):
     activity_level = models.IntegerField(default=0)
     physical_level = models.IntegerField(blank=True, null=True)
     height = models.FloatField(null=True)
-    profile_community_privacy = models.BooleanField(default=False)
-    profile_physical_data_privacy = models.BooleanField(default=False)
+    profile_privacy = models.IntegerField(default=0)
+    # 0: 전체 공개, 1: 커뮤니티 활동만 공개, 2: 신체 기록만 공개, 3: 모두 비공개
     fcm_token = models.CharField(max_length=200, null=True)
     intro_text = models.CharField(max_length=30, blank=True, null=True)
+    auth_provider = models.IntegerField()
+    # 0: Manual, 1: Kakao, 2: Google, 3: Facebook
 
     class Meta:
         managed = True

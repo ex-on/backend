@@ -18,3 +18,28 @@ class Notification(models.Model):
   class Meta:
     managed = True
     db_table = 'notification'
+
+class UserNotiReception(models.Model):
+  user = models.ForeignKey('users.User', on_delete=models.CASCADE)
+
+  exercise_attendance = models.BooleanField(default=True)
+  daily_exercise_complete = models.BooleanField(default=True)
+  weekly_exercise_protein = models.BooleanField(default=True)
+  hot_post = models.BooleanField(default=True)
+  hot_qna = models.BooleanField(default=True)
+  qna_best_answer = models.BooleanField(default=True)
+  qna_selected_answer = models.BooleanField(default=True)
+  activity_level_up = models.BooleanField(default=True)
+
+  post_comment = models.BooleanField(default=True)
+  post_reply = models.BooleanField(default=True)
+
+  qna_answer = models.BooleanField(default=True)
+  qna_comment = models.BooleanField(default=True)
+  qna_reply = models.BooleanField(default=True)
+
+  general = models.BooleanField(default=True)
+
+  class Meta:
+    managed = True
+    db_table = 'user_noti_reception'

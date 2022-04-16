@@ -49,3 +49,20 @@ activityLevelIntToStr = {
     5: '걸어다니는 헬스장',
     6: '근손실 방지 위원회', 
 }
+
+notificationFieldIntToStr = {
+    0: 'exercise_attendance',
+    1: 'daily_exercise_complete',
+    2: 'weekly_exercise_protein',
+    3: 'hot_post',
+    4: 'hot_qna',
+    5: 'qna_best_answer',
+    6: 'qna_selected_answer',
+    7: 'activity_level_up',
+    8: 'post_comment',
+    9: 'post_reply',
+    10: 'qna_answer',
+    11: 'qna_comment',
+    12: 'qna_reply',
+    13: 'general',
+}
