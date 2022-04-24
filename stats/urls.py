@@ -3,10 +3,10 @@ from .views import *
 
 urlpatterns = [
     path('daily', dailyExerciseStats),
-    path('daily_memo', dailyExerciseStatsMemo),
     path('weekly', weeklyExerciseStats),
     path('monthly', monthlyExerciseStats),
     path('monthly_date', monthlyExerciseDates),
+    path('daily_memo', dailyExerciseStatsMemo),
     path('cumulative_time', cumulativeTimeStats),
     path('cumulative_exercise', cumulativeExerciseStats),
     path('exercise', exerciseStats),

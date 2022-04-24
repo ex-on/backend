@@ -52,43 +52,10 @@ class PostCommentReplyCountSerializer(serializers.ModelSerializer):
         fields = ("count_likes",)
 
 
-class UserNameSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = User
-        fields = ('uuid', 'username')
-
-
-class UserProfileSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = UserDetailsStatic
-        fields = ('user_id', 'profile_icon')
-
-
 class PostPreviewSerializer(serializers.ModelSerializer):
     class Meta:
         model = Post
         fields = ('id', 'title', 'content', 'created_at', 'type')
-
-
-class PostViewSerializer(serializers.Serializer):
-    post = PostSerializer(many=True)
-    post_count = PostCountSerializer(many=True)
-    username = UserNameSerializer(many=True)
-    user_profile = UserProfileSerializer(many=True)
-
-
-class PostCommentViewSerializer(serializers.Serializer):
-    comment = PostCommentSerializer(many=True)
-    comment_count = PostCommentCountSerializer(many=True)
-    username = UserNameSerializer(many=True)
-    user_profile = UserProfileSerializer(many=True)
-
-
-class PostCommentReplyViewSerializer(serializers.Serializer):
-    reply = PostCommentReplySerializer(many=True)
-    reply_count = PostCommentReplyCountSerializer(many=True)
-    username = UserNameSerializer(many=True)
-    user_profile = UserProfileSerializer(many=True)
 
 
 class QnaSerializer(serializers.ModelSerializer):
@@ -143,29 +110,3 @@ class QnaCountMiniSerializer(serializers.ModelSerializer):
     class Meta:
         model = QnaCount
         fields = ("count_likes", "count_answers")
-
-
-class QnaViewSerializer(serializers.Serializer):
-    qna = QnaSerializer(many=True)
-    qna_count = QnaCountSerializer(many=True)
-    user_name = UserNameSerializer(many=True)
-    user_profile = UserProfileSerializer(many=True)
-
-
-class QnaAnswerViewSerializer(serializers.Serializer):
-    answer = QnaAnswerSerializer(many=True)
-    answer_count = QnaAnswerCountSerializer(many=True)
-    user_name = UserNameSerializer(many=True)
-    user_profile = UserProfileSerializer(many=True)
-
-
-class QnaAnswerCommentReplyViewSerializer(serializers.Serializer):
-    comment = QnaAnswerCommentSerializer(many=True)
-    reply = QnaAnswerCommentReplySerializer(many=True)
-    user_name = UserNameSerializer(many=True)
-    user_profile = UserProfileSerializer(many=True)
-
-
-class PostQnaSerializer(serializers.Serializer):
-    post = PostSerializer(many=True)
-    qna = QnaSerializer(many=True)
