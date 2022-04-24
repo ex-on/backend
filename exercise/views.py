@@ -129,7 +129,7 @@ def getExerciseStatusWeek(request):
 
             exerciseData = ExerciseSerializer(
                 Exercise.objects.get(id=record.exercise_id)).data
-                
+
             data = {
                 'exercise_data': exerciseData,
                 'record_data': recordData,
@@ -340,6 +340,41 @@ def getExerciseTime(request):
     return Response(serializer.data)
 
 
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def recentExercisePlan(request):
+    uuid = request.user.uuid
+    exercise = Exercise.objects.get(id=request.GET['id'])
+    data = {}
+    if exercise.type == 0:
+        plans = ExercisePlanWeight.objects.filter(
+            user_id=uuid, exercise_id=exercise.id)
+        if plans.exists():
+            plan = ExercisePlanWeight.objects.filter(
+                user_id=uuid, exercise_id=exercise.id).latest()
+            sets = ExercisePlanWeightSet.objects.filter(
+                exercise_plan_weight_id=plan.id)
+            setData = []
+
+            for set in sets:
+                setData.append(ExercisePlanWeightSetSerializer(set).data)
+
+            data['sets'] = setData
+        else:
+            data['sets'] = []
+    else:
+        plans = ExercisePlanCardio.objects.filter(
+            user_id=uuid, exercise_id=exercise.id)
+        if plans.exists():
+            plan = ExercisePlanCardio.objects.filter(
+                user_id=uuid, exercise_id=exercise.id).latest()
+            data = ExercisePlanCardioSerializer(plan).data
+        else:
+            data = {}
+
+    return Response(data=data)
+
+
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def postExercisePlanWeight(request):
@@ -397,8 +432,8 @@ def exerciseRecordWeight(request):
 
         for idx, set in enumerate(sets):
             recordSet = ExerciseRecordWeightSet(exercise_record_weight_id=record.id, record_weight=set['record_weight'],
-                                                record_reps=set['record_reps'], 
-                                                 set_num=idx + 1, one_rm=float(set['record_weight']) * (1 + int(set['record_reps']) * 0.025))
+                                                record_reps=set['record_reps'],
+                                                set_num=idx + 1, one_rm=float(set['record_weight']) * (1 + int(set['record_reps']) * 0.025))
             recordSet.save()
 
         if DailyExerciseStats.objects.filter(user_id=uuid, day=record.date).exists():
@@ -416,7 +451,7 @@ def exerciseRecordWeight(request):
             exercise_attendance_fcm(uuid)
 
         return Response(status=200, data=record.id)
-        
+
     else:
         exerciseRecordWeightId = int(request.GET['id'])
         record = ExerciseRecordWeight.objects.get(id=exerciseRecordWeightId)
@@ -440,7 +475,9 @@ def exerciseRecordCardio(request):
         if 'record_distance' in data:
             record.record_distance = data['record_distance']
         exercise = Exercise.objects.get(id=record.exercise_id)
-        calories = record.record_duration / 60 * exercise.cardio_met * 3.5 * 0.001 * PhysicalDataRecord.objects.filter(user_id=uuid).order_by('-created_at').first().weight * 5
+        calories = record.record_duration / 60 * exercise.cardio_met * 3.5 * 0.001 * \
+            PhysicalDataRecord.objects.filter(user_id=uuid).order_by(
+                '-created_at').first().weight * 5
         record.record_calories = calories
         record.save()
         plan = ExercisePlanCardio.objects.get(

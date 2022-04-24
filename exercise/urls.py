@@ -26,5 +26,6 @@ urlpatterns = [
     path('post_exercise_plan_cardio', postExercisePlanCardio),
     path('record_weight', exerciseRecordWeight),
     path('record_cardio', exerciseRecordCardio),
+    path('recent', recentExercisePlan),
 
 ]
