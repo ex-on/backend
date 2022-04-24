@@ -1,6 +1,7 @@
 from itertools import chain, count
 from django.http.response import HttpResponse
 from django.db.models import Window, F
+from django.shortcuts import render
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.decorators import api_view, authentication_classes, permission_classes
@@ -437,3 +438,9 @@ def rankWeight(request):
     }
 
     return Response(data=data)
+
+
+@api_view(['GET'])
+@permission_classes([])
+def privacyPolicy(request): 
+    return render(request, 'privacy_policy.html')

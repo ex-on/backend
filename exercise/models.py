@@ -36,9 +36,11 @@ class ExercisePlanCardio(models.Model):
     class Meta:
         managed = True
         db_table = 'exercise_plan_cardio'
+        get_latest_by = "date"
         constraints = [
             models.CheckConstraint(
-                check=Q(target_distance__isnull=False) | Q(target_duration__isnull=False),
+                check=Q(target_distance__isnull=False) | Q(
+                    target_duration__isnull=False),
                 name='not_both_null'
             )
         ]
@@ -54,6 +56,7 @@ class ExercisePlanWeight(models.Model):
     class Meta:
         managed = True
         db_table = 'exercise_plan_weight'
+        get_latest_by = "date"
 
 
 class ExercisePlanWeightSet(models.Model):
@@ -83,6 +86,7 @@ class ExerciseRecordCardio(models.Model):
     class Meta:
         managed = True
         db_table = 'exercise_record_cardio'
+
 
 class ExerciseRecordWeight(models.Model):
     user = models.ForeignKey('users.User', on_delete=models.CASCADE)
