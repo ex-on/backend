@@ -6,8 +6,7 @@ from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.decorators import api_view, authentication_classes, permission_classes
 from rest_framework.permissions import IsAuthenticated
-from community.serializers import UserProfileSerializer
-from exercise.models import ExercisePlanCardio, ExercisePlanWeight, ExerciseRecordCardio, ExerciseRecordWeight
+from exercise.models import ExercisePlanCardio, ExercisePlanWeight
 from exon_backend.settings import COGNITO_POOL_DOMAIN, COGNITO_AWS_REGION
 from notifications.models import UserNotiReception
 from stats.models import DailyExerciseStats, PhysicalDataRecord
@@ -74,28 +73,6 @@ def getUserInfo(request):
 
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
-def updateUsername(request):
-    uuid = request.user.uuid
-    data = json.loads(request.body)
-    user = User.objects.get(uuid=uuid)
-    user.username = data['username']
-    user.save()
-
-    return Response(status=status.HTTP_200_OK)
-
-
-@api_view(['GET'])
-@permission_classes([IsAuthenticated])
-def checkPassword(request):
-    uuid = request.user.uuid
-    user = User.objects.get(uuid=uuid)
-    passwordValid = user.password == request.GET['password']
-
-    return Response(data=passwordValid)
-
-
-@api_view(['POST'])
-@permission_classes([IsAuthenticated])
 def registerCognitoUserInfo(request):
     uuid = request.user.uuid
     data = json.loads(request.body)
@@ -148,6 +125,28 @@ def registerCognitoUserInfo(request):
     userNotiReception.save()
 
     return HttpResponse(status=status.HTTP_201_CREATED)
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def updateUsername(request):
+    uuid = request.user.uuid
+    data = json.loads(request.body)
+    user = User.objects.get(uuid=uuid)
+    user.username = data['username']
+    user.save()
+
+    return Response(status=status.HTTP_200_OK)
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def checkPassword(request):
+    uuid = request.user.uuid
+    user = User.objects.get(uuid=uuid)
+    passwordValid = user.password == request.GET['password']
+
+    return Response(data=passwordValid)
 
 
 @api_view(['POST'])
@@ -285,46 +284,6 @@ def profileStats(request):
     return Response(data=data)
 
 
-@api_view(['GET', 'POST'])
-@permission_classes([IsAuthenticated])
-def profilePrivacy(request):
-    uuid = request.user.uuid
-
-    if request.method == 'POST':
-        data = json.loads(request.body)
-        userStatic = UserDetailsStatic.objects.get(user_id=uuid)
-
-        if data['privacy'] == 0:
-            if userStatic.profile_privacy != 0:
-                userStatic.profile_privacy = 0
-            elif userStatic.profile_privacy == 0:
-                userStatic.profile_privacy = 3
-        elif data['privacy'] == 1:
-            if userStatic.profile_privacy == 0:
-                userStatic.profile_privacy = 2
-            elif userStatic.profile_privacy == 1:
-                userStatic.profile_privacy = 3
-            elif userStatic.profile_privacy == 2:
-                userStatic.profile_privacy = 0
-            elif userStatic.profile_privacy == 3:
-                userStatic.profile_privacy = 1
-        elif data['privacy'] == 2:
-            if userStatic.profile_privacy == 0:
-                userStatic.profile_privacy = 1
-            elif userStatic.profile_privacy == 1:
-                userStatic.profile_privacy = 0
-            elif userStatic.profile_privacy == 2:
-                userStatic.profile_privacy = 3
-            elif userStatic.profile_privacy == 3:
-                userStatic.profile_privacy = 2
-
-        userStatic.save()
-
-        return Response(status=status.HTTP_200_OK)
-
-    else:
-        return Response(UserDetailsStatic.objects.get(user_id=uuid).profile_privacy)
-
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
@@ -438,6 +397,47 @@ def rankWeight(request):
     }
 
     return Response(data=data)
+
+
+@api_view(['GET', 'POST'])
+@permission_classes([IsAuthenticated])
+def profilePrivacy(request):
+    uuid = request.user.uuid
+
+    if request.method == 'POST':
+        data = json.loads(request.body)
+        userStatic = UserDetailsStatic.objects.get(user_id=uuid)
+
+        if data['privacy'] == 0:
+            if userStatic.profile_privacy != 0:
+                userStatic.profile_privacy = 0
+            elif userStatic.profile_privacy == 0:
+                userStatic.profile_privacy = 3
+        elif data['privacy'] == 1:
+            if userStatic.profile_privacy == 0:
+                userStatic.profile_privacy = 2
+            elif userStatic.profile_privacy == 1:
+                userStatic.profile_privacy = 3
+            elif userStatic.profile_privacy == 2:
+                userStatic.profile_privacy = 0
+            elif userStatic.profile_privacy == 3:
+                userStatic.profile_privacy = 1
+        elif data['privacy'] == 2:
+            if userStatic.profile_privacy == 0:
+                userStatic.profile_privacy = 1
+            elif userStatic.profile_privacy == 1:
+                userStatic.profile_privacy = 0
+            elif userStatic.profile_privacy == 2:
+                userStatic.profile_privacy = 3
+            elif userStatic.profile_privacy == 3:
+                userStatic.profile_privacy = 2
+
+        userStatic.save()
+
+        return Response(status=status.HTTP_200_OK)
+
+    else:
+        return Response(UserDetailsStatic.objects.get(user_id=uuid).profile_privacy)
 
 
 @api_view(['GET'])
