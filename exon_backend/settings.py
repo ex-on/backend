@@ -27,12 +27,14 @@ secrets = os.path.join(BASE_DIR, 'secrets.json')
 with open(secrets) as f:
     secrets = json.loads(f.read())
 
+
 def get_secret(setting, secrets=secrets):
     try:
         return secrets[setting]
     except KeyError:
         error_msg = "Set the {} environment variable".format(setting)
         raise ImproperlyConfigured(error_msg)
+
 
 SECRET_KEY = get_secret("SECRET_KEY")
 RDS_USER = get_secret("RDS_USER")
@@ -226,3 +228,39 @@ STATIC_ROOT = os.path.join(BASE_DIR, 'static')
 # https://docs.djangoproject.com/en/3.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+LOG_FILE = os.path.join(os.path.dirname(__file__), '..', 'myLog.log')
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {'verbose': {
+        'format': "[%(asctime)s] %(levelname)s [%(name)s:%(lineno)s] %(message)s",
+        'datefmt': "%d/%b/%Y %H:%M:%S",
+    },
+        'simple': {
+            'format': '%(levelname)s %(message)s',
+    },
+    },
+    'handlers': {'file': {'level': 'DEBUG',
+                          'class': 'logging.handlers.RotatingFileHandler',
+                          'filename': LOG_FILE,
+                          'formatter': 'verbose',
+                          'maxBytes': 1024*1024*10,
+                          'backupCount': 5,
+                          },
+                 },
+    'loggers': {
+        'django':
+        {
+            'handlers': ['file'],
+            'propagate': True,
+            'level': 'INFO',
+        },
+        'django.request':
+        {
+            'handlers': ['file'],
+            'propagate': False,
+            'level': 'INFO',
+        },
+    }
+}
