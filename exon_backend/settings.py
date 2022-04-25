@@ -229,7 +229,7 @@ STATIC_ROOT = os.path.join(BASE_DIR, 'static')
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-LOG_FILE = os.path.join(os.path.dirname(__file__), '..', 'myLog.log')
+LOG_FILE = os.path.join(os.path.dirname(__file__), '..', 'logs.log')
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
@@ -244,7 +244,7 @@ LOGGING = {
     'handlers': {
         'file': {
             'level': 'DEBUG',
-            'class': 'logging.StreamHandler',
+            'class': 'logging.handlers.RotatingFileHandler',
             'filename': LOG_FILE,
             'formatter': 'verbose',
             'maxBytes': 1024*1024*10,
