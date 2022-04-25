@@ -16,31 +16,48 @@ import json
 from urllib import request
 import firebase_admin
 from firebase_admin import credentials
+from django.core.exceptions import ImproperlyConfigured
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 cred_path = os.path.join(BASE_DIR, "fcmServiceAccountKey.json")
 cred = credentials.Certificate(cred_path)
 firebase_admin.initialize_app(cred)
 
+secrets = os.path.join(BASE_DIR, 'secrets.json')
+with open(secrets) as f:
+    secrets = json.loads(f.read())
+
+def get_secret(setting, secrets=secrets):
+    try:
+        return secrets[setting]
+    except KeyError:
+        error_msg = "Set the {} environment variable".format(setting)
+        raise ImproperlyConfigured(error_msg)
+
+SECRET_KEY = get_secret("SECRET_KEY")
+RDS_USER = get_secret("RDS_USER")
+RDS_PASSWORD = get_secret("RDS_PASSWORD")
+RDS_HOST = get_secret("RDS_HOST")
+COGNITO_AWS_REGION = get_secret("COGNITO_AWS_REGION")
+COGNITO_USER_POOL = get_secret("COGNITO_USER_POOL")
+COGNITO_POOL_DOMAIN = get_secret("COGNITO_POOL_DOMAIN")
+
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/3.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-COGNITO_AWS_REGION = 'ap-northeast-2'
-COGNITO_USER_POOL = 'ap-northeast-2_EuYr8s0Rp'
 # Provide this value if `id_token` is used for authentication (it contains 'aud' claim).
 # `access_token` doesn't have it, in this case keep the COGNITO_AUDIENCE empty
 COGNITO_AUDIENCE = None
 # will be set few lines of code later, if configuration provided
-COGNITO_POOL_DOMAIN = 'exon'
-
-SECRET_KEY = 'django-insecure-*4ob$(c+eyksy^ayz=#@7^1ga*m-eq7jb!%e8d94qe82%zw*g*'
-
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['*']
+ALLOWED_HOSTS = [
+    '.exonverse.com',
+    '.ap-northeast-2.compute.amazonaws.com',
+]
 
 rsa_keys = {}
 # To avoid circular imports, we keep this logic here.
@@ -138,9 +155,9 @@ DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
         'NAME': 'exon',
-        'USER': 'admin',
-        'PASSWORD': 'Unicornexon21!',
-        'HOST': 'exon.ccpgkvutfljg.ap-northeast-2.rds.amazonaws.com',
+        'USER': RDS_USER,
+        'PASSWORD': RDS_PASSWORD,
+        'HOST': RDS_HOST,
         'OPTIONS': {
             'init_command': 'SET sql_mode="STRICT_TRANS_TABLES"',
             'charset': 'utf8mb4',
