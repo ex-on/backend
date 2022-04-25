@@ -241,23 +241,23 @@ LOGGING = {
             'format': '%(levelname)s %(message)s',
     },
     },
-    'handlers': {'file': {'level': 'DEBUG',
-                          'class': 'logging.handlers.RotatingFileHandler',
-                          'filename': LOG_FILE,
-                          'formatter': 'verbose',
-                          'maxBytes': 1024*1024*10,
-                          'backupCount': 5,
-                          },
-                 },
+    'handlers': {
+        'file': {
+            'level': 'DEBUG',
+            'class': 'logging.StreamHandler',
+            'filename': LOG_FILE,
+            'formatter': 'verbose',
+            'maxBytes': 1024*1024*10,
+            'backupCount': 5,
+        },
+    },
     'loggers': {
-        'django':
-        {
+        'django': {
             'handlers': ['file'],
             'propagate': True,
             'level': 'INFO',
         },
-        'django.request':
-        {
+        'django.request': {
             'handlers': ['file'],
             'propagate': False,
             'level': 'INFO',
