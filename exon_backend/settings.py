@@ -112,7 +112,7 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'django.contrib.auth.middleware.RemoteUserMiddleware',
-    # 'users.middleware.user_info_validation_middleware.UserInfoValidationMiddleware'
+    'request_logging.middleware.LoggingMiddleware',
 ]
 
 ROOT_URLCONF = 'exon_backend.urls'

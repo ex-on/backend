@@ -11,6 +11,7 @@ cryptography==36.0.0
 distlib==0.3.3
 Django==3.2.8
 django-apscheduler==0.6.2
+django-request-logging==0.7.5
 djangorestframework==3.12.4
 drf-jwt==1.19.1
 ecdsa==0.17.0
