@@ -3,6 +3,8 @@ from tkinter import E
 from django.http.response import HttpResponse
 from django.shortcuts import render
 from django.utils import tree
+from pkg_resources import require
+from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
@@ -262,9 +264,9 @@ def postExercisePlanWeight(request):
 def postExercisePlanCardio(request):
     uuid = request.user.uuid
     data = json.loads(request.body)
-    record = ExercisePlanCardio(user_id=uuid, exercise_id=data['exercise_id'],
-                                target_distance=data['target_distance'], target_duration=data['target_duration'])
-    record.save()
+    plan = ExercisePlanCardio(user_id=uuid, exercise_id=data['exercise_id'],
+                              target_distance=data['target_distance'], target_duration=data['target_duration'])
+    plan.save()
     return HttpResponse(status=200)
 
 
@@ -380,3 +382,89 @@ def exerciseRecordCardio(request):
             },
         }
         return Response(data=data)
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def exercisePlans(request):
+    uuid = request.user.uuid
+    weightPlans = ExercisePlanWeight.objects.filter(
+        user_id=uuid, date=datetime.datetime.now().date())
+    cardioPlans = ExercisePlanCardio.objects.filter(
+         user_id=uuid, date=datetime.datetime.now().date())
+    plans = chain(weightPlans, cardioPlans)
+    dataList = []
+
+    for plan in plans:
+        if isinstance(plan, ExercisePlanWeight):
+            data = {
+                'exercise_data': ExerciseSerializer(plan.exercise).data,
+                'plan_data': {
+                    'id': plan.id,
+                    'sets': []
+                }
+            }
+            sets = ExercisePlanWeightSet.objects.filter(
+                exercise_plan_weight_id=plan.id)
+            for set in sets:
+                data['plan_data']['sets'].append(
+                    ExercisePlanWeightSetSerializer(set).data)
+        else:
+            data = {
+                'exercise_data': ExerciseSerializer(plan.exercise).data,
+                'plan_data': ExercisePlanCardioSerializer(plan).data
+            }
+
+        dataList.append(data)
+
+    return Response(data=dataList)
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def deletePlan(request):
+    uuid = request.user.uuid
+    data = json.loads(request.body)
+    if data['type'] == 0:
+        plan = ExercisePlanWeight.objects.get(id=data['id'])
+    else:
+        plan = ExercisePlanCardio.objects.get(id=data['id'])
+        
+    plan.delete()
+
+    return Response(status=status.HTTP_200_OK)
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def updateExercisePlanWeight(request):
+    uuid = request.user.uuid
+    data = json.loads(request.body)
+    sets = data['sets']
+    plan = ExercisePlanWeight.objects.get(id=data['id'])
+    plan.num_sets = len(sets)
+    plan.save()
+
+    previousSets = ExercisePlanWeightSet.objects.filter(
+        exercise_plan_weight_id=plan.id)
+    previousSets.delete()
+
+    for set in sets:
+        newSet = ExercisePlanWeightSet(exercise_plan_weight_id=plan.id,
+                                       set_num=set['set_num'], target_weight=set['target_weight'], target_reps=set['target_reps'])
+        newSet.save()
+
+    return HttpResponse(status=200)
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def updateExercisePlanCardio(request):
+    uuid = request.user.uuid
+    data = json.loads(request.body)
+    plan = ExercisePlanCardio.objects.get(id=data['id'])
+    plan.target_distance = data['target_distance']
+    plan.target_duration = data['target_duration']
+    plan.save()
+
+    return HttpResponse(status=200)

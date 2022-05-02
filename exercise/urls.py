@@ -11,4 +11,8 @@ urlpatterns = [
     path('record_weight', exerciseRecordWeight),
     path('record_cardio', exerciseRecordCardio),
     path('recent', recentExercisePlan),
+    path('daily_plans', exercisePlans),
+    path('plan_delete', deletePlan),
+    path('plan_weight/update', updateExercisePlanWeight),
+    path('plan_cardio/update', updateExercisePlanCardio)
 ]

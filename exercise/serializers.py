@@ -5,7 +5,7 @@ from .models import ExercisePlanWeight, ExercisePlanWeightSet, Exercise, Exercis
 class ExerciseSerializer(serializers.ModelSerializer):
     class Meta:
         model = Exercise
-        fields = ('id', 'name', 'target_muscle', 'exercise_method',)
+        fields = ('id', 'name', 'target_muscle', 'exercise_method', 'type')
 
 
 class ExerciseDetailsSerializer(serializers.ModelSerializer):
@@ -42,7 +42,7 @@ class ExerciseRecordWeightSerializer(serializers.ModelSerializer):
     class Meta:
         model = ExerciseRecordWeight
         fields = ('total_sets', 'exercise_time',
-                  'total_volume', 'max_one_rm', 'total_reps',)
+                  'total_volume', 'max_one_rm',)
 
 
 class ExerciseRecordBodyWeightSerializer(serializers.ModelSerializer):
