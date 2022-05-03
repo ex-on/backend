@@ -389,15 +389,24 @@ def exerciseRecordCardio(request):
 def exercisePlans(request):
     uuid = request.user.uuid
     weightPlans = ExercisePlanWeight.objects.filter(
-        user_id=uuid, date=datetime.datetime.now().date())
+        user_id=uuid, date=datetime.datetime.now().date(), completed=False)
     cardioPlans = ExercisePlanCardio.objects.filter(
-         user_id=uuid, date=datetime.datetime.now().date())
+        user_id=uuid, date=datetime.datetime.now().date(), completed=False)
+    weightRecords = ExerciseRecordWeight.objects.filter(
+        user_id=uuid, date=datetime.datetime.now().date()
+    )
+    cardioRecords = ExerciseRecordCardio.objects.filter(
+        user_id=uuid, date=datetime.datetime.now().date())
     plans = chain(weightPlans, cardioPlans)
-    dataList = []
+    records = chain(weightRecords, cardioRecords)
+    dataMap = {
+        'plans': [],
+        'records': [],
+    }
 
     for plan in plans:
         if isinstance(plan, ExercisePlanWeight):
-            data = {
+            planData = {
                 'exercise_data': ExerciseSerializer(plan.exercise).data,
                 'plan_data': {
                     'id': plan.id,
@@ -407,17 +416,40 @@ def exercisePlans(request):
             sets = ExercisePlanWeightSet.objects.filter(
                 exercise_plan_weight_id=plan.id)
             for set in sets:
-                data['plan_data']['sets'].append(
+                planData['plan_data']['sets'].append(
                     ExercisePlanWeightSetSerializer(set).data)
         else:
-            data = {
+            planData = {
                 'exercise_data': ExerciseSerializer(plan.exercise).data,
                 'plan_data': ExercisePlanCardioSerializer(plan).data
             }
 
-        dataList.append(data)
+        dataMap['plans'].append(planData)
 
-    return Response(data=dataList)
+    for record in records:
+        if isinstance(record, ExerciseRecordWeight):
+            recordData = {
+                'exercise_data': ExerciseSerializer(record.exercise).data,
+                'record_data': {
+                    'total_volume': record.total_volume,
+                    'total_reps': record.total_reps,
+                    'sets': [],
+                }
+            }
+            sets = ExerciseRecordWeightSet.objects.filter(
+                exercise_record_weight_id=record.id)
+            for set in sets:
+                recordData['record_data']['sets'].append(
+                    ExerciseRecordWeightSetSerializer(set).data)
+        else:
+            recordData = {
+                'exercise_data': ExerciseSerializer(record.exercise).data,
+                'record_data':  ExerciseRecordCardioSerializer(record).data,
+            }
+
+        dataMap['records'].append(recordData)
+
+    return Response(data=dataMap)
 
 
 @api_view(['POST'])
@@ -429,7 +461,7 @@ def deletePlan(request):
         plan = ExercisePlanWeight.objects.get(id=data['id'])
     else:
         plan = ExercisePlanCardio.objects.get(id=data['id'])
-        
+
     plan.delete()
 
     return Response(status=status.HTTP_200_OK)

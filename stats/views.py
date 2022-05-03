@@ -73,7 +73,10 @@ def dailyExerciseStats(request):
         recordData = []
 
         for index, record in enumerate(recordsWeight):
-            weightData = ExerciseRecordWeightSerializer(record).data
+            if record.exercise.exercise_method == 1:
+                weightData = ExerciseRecordBodyWeightSerializer(record).data
+            else:
+                weightData = ExerciseRecordWeightSerializer(record).data
             recordSets = ExerciseRecordWeightSet.objects.filter(
                 exercise_record_weight_id=record.id)
             setDataList = []
