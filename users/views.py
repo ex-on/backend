@@ -83,7 +83,7 @@ def registerCognitoUserInfo(request):
     user = User.objects.get(uuid=uuid)
     print(request.META)
 
-    if auth_provider == ('Facebook' or 'Google'):
+    if auth_provider == ('Facebook' or 'Google' or 'Apple'):
         endpoint = f"https://{COGNITO_POOL_DOMAIN}.auth.{COGNITO_AWS_REGION}.amazoncognito.com/oauth2/userInfo"
         userInfo = requests.get(
             endpoint, headers={'Authorization': 'Bearer ' + str(request.auth)})
@@ -91,8 +91,10 @@ def registerCognitoUserInfo(request):
         email = json.loads(userInfo.content)['email']
         if auth_provider == 'Facebook':
             authProvider = 3
-        else:
+        elif auth_provider == 'Google':
             authProvider = 2
+        elif auth_provider == 'Apple':
+            auth_provider = 4
     elif auth_provider == 'Kakao':
         email = data['email']
         user.email = email

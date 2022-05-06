@@ -15,7 +15,7 @@ urlpatterns = [
     path('post_count/update_likes', updatePostLikeCount),
     path('post_count/update_saved', updatePostSavedCount),
     path('post_comment_count/update_likes', updatePostCommentLikeCount),
-    path('post_comment_reply_count/update_likes', updatePostCommentLikeCount),
+    path('post_comment_reply_count/update_likes', updatePostCommentReplyLikeCount),
 
     path('qna_list', getQnaPreview),  # page_num
     path('qna_list/hot', getHotQnaPreview),

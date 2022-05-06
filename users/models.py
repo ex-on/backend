@@ -79,7 +79,7 @@ class UserDetailsStatic(models.Model):
     fcm_token = models.CharField(max_length=200, null=True)
     intro_text = models.CharField(max_length=30, blank=True, null=True)
     auth_provider = models.IntegerField()
-    # 0: Manual, 1: Kakao, 2: Google, 3: Facebook
+    # 0: Manual, 1: Kakao, 2: Google, 3: Facebook, 4: Apple
 
     class Meta:
         managed = True
