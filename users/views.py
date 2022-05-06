@@ -444,3 +444,9 @@ def profilePrivacy(request):
 @permission_classes([])
 def privacyPolicy(request):
     return render(request, 'privacy_policy.html')
+
+
+@api_view(['GET'])
+@permission_classes([])
+def termsOfUse(request):
+    return render(request, 'terms_of_use.html')

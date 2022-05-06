@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import checkAvailableEmail, checkAvailableUsername, checkPassword, checkUserInfo, fcmToken, privacyPolicy, profilePrivacy, profileStats, getUserInfo, rankCardio, rankProtein, rankWeight, registerCognitoUserInfo, cognitoUserPhysicalInfo, updateUsername
+from .views import checkAvailableEmail, checkAvailableUsername, checkPassword, checkUserInfo, fcmToken, privacyPolicy, profilePrivacy, profileStats, getUserInfo, rankCardio, rankProtein, rankWeight, registerCognitoUserInfo, cognitoUserPhysicalInfo, termsOfUse, updateUsername
 
 urlpatterns = [
     path("check_email", checkAvailableEmail),  # email
@@ -17,4 +17,5 @@ urlpatterns = [
     path('rank/cardio', rankCardio),
     path('rank/weight', rankWeight),
     path('policy/privacy', privacyPolicy),
+    path('policy/terms_of_use', termsOfUse),
 ]
