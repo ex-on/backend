@@ -60,7 +60,7 @@ ALLOWED_HOSTS = [
     '3.34.98.99',
     '.exonverse.com',
     '.ap-northeast-2.compute.amazonaws.com',
-    '*',
+    # '*',
 ]
 
 rsa_keys = {}

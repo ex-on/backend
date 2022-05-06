@@ -81,9 +81,8 @@ def registerCognitoUserInfo(request):
     gender = data['gender']
     username = data['username']
     user = User.objects.get(uuid=uuid)
-    print(request.META)
 
-    if auth_provider == ('Facebook' or 'Google' or 'Apple'):
+    if auth_provider in ('Facebook', 'Google', 'Apple'):
         endpoint = f"https://{COGNITO_POOL_DOMAIN}.auth.{COGNITO_AWS_REGION}.amazoncognito.com/oauth2/userInfo"
         userInfo = requests.get(
             endpoint, headers={'Authorization': 'Bearer ' + str(request.auth)})
@@ -94,7 +93,7 @@ def registerCognitoUserInfo(request):
         elif auth_provider == 'Google':
             authProvider = 2
         elif auth_provider == 'Apple':
-            auth_provider = 4
+            authProvider = 4
     elif auth_provider == 'Kakao':
         email = data['email']
         user.email = email
@@ -119,7 +118,7 @@ def registerCognitoUserInfo(request):
             user_id=uuid, birth_date=birth_date, gender=gender, auth_provider=authProvider)
 
     userDetailsCount = UserDetailsCount(user_id=uuid)
-    userNotiReception = UserNotiReception(user_id=uuid) 
+    userNotiReception = UserNotiReception(user_id=uuid)
 
     user.save()
     userDetailsStatic.save()
@@ -286,7 +285,6 @@ def profileStats(request):
     return Response(data=data)
 
 
-
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def rankProtein(request):
@@ -444,5 +442,5 @@ def profilePrivacy(request):
 
 @api_view(['GET'])
 @permission_classes([])
-def privacyPolicy(request): 
+def privacyPolicy(request):
     return render(request, 'privacy_policy.html')
