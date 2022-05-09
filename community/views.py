@@ -20,6 +20,8 @@ from django.db.models import Q
 # Create your views here.
 
 ############게시판 메인화면###############
+
+
 def buildPostPreview(post):
     if len(post.content) > 70:
         post.content = post.content[0:70] + "..."
@@ -50,6 +52,22 @@ def buildQnaPreview(qna):
     return preview
 
 
+def filterBlockedUsersSet(uuid, data):
+    usersBlockedUsers = UsersBlockedUsers.objects.filter(
+        user_id=uuid).values('target_user_id')
+
+    return data.exclude(user_id__in=usersBlockedUsers)
+
+
+def filterBlockedUsersObject(uuid, data):
+    usersBlockedUsers = UsersBlockedUsers.objects.filter(
+        user_id=uuid).values('target_user_id')
+    if data.user_id in [d['target_user_id'] for d in usersBlockedUsers]:
+        return None
+    else:
+        return data
+
+
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def search(request):
@@ -58,8 +76,8 @@ def search(request):
     data = []
     # 0: 게시판, 1: HOT 게시판, 2: 자유 게시판, 3: 정보 게시판, 4: Q&A, 5: HOT Q&A, 6: 미해결 Q&A, 7: 해결 Q&A
     if category == 0:
-        posts = Post.objects.filter(Q(content__icontains=text) | Q(
-            title__icontains=text)).order_by('-created_at')
+        posts = filterBlockedUsersSet(request.user.uuid, Post.objects.filter(Q(content__icontains=text) | Q(
+            title__icontains=text)).order_by('-created_at'))
         for post in posts:
             data.append(buildPostPreview(post))
     elif category == 1:
@@ -67,24 +85,25 @@ def search(request):
             '-created_at')
         hotPosts = Post.objects.none()
         for count in counts:
-            hotPosts = hotPosts | Post.objects.filter(id=count.post_id)
+            hotPosts = hotPosts | filterBlockedUsersSet(
+                request.user.uuid, Post.objects.filter(id=count.post_id))
         resultPosts = hotPosts.filter(
             Q(content__icontains=text) | Q(title__icontains=text))
         for post in resultPosts:
             data.append(buildPostPreview(post))
     elif category == 2:
-        posts = Post.objects.filter(
-            Q(type=1) & (Q(content__icontains=text) | Q(title__icontains=text))).order_by('-created_at')
+        posts = filterBlockedUsersSet(request.user.uuid, Post.objects.filter(
+            Q(type=1) & (Q(content__icontains=text) | Q(title__icontains=text))).order_by('-created_at'))
         for post in posts:
             data.append(buildPostPreview(post))
     elif category == 3:
-        posts = Post.objects.filter(
-            Q(type=2) & (Q(content__icontains=text) | Q(title__icontains=text))).order_by('-created_at')
+        posts = filterBlockedUsersSet(request.user.uuid, Post.objects.filter(
+            Q(type=2) & (Q(content__icontains=text) | Q(title__icontains=text))).order_by('-created_at'))
         for post in posts:
             data.append(buildPostPreview(post))
     elif category == 4:
-        qnas = Qna.objects.filter(
-            Q(content__icontains=text) | Q(title__icontains=text)).order_by('-created_at')
+        qnas = filterBlockedUsersSet(request.user.uuid, Qna.objects.filter(
+            Q(content__icontains=text) | Q(title__icontains=text)).order_by('-created_at'))
         for qna in qnas:
             data.append(buildQnaPreview(qna))
     elif category == 5:
@@ -92,19 +111,20 @@ def search(request):
             count_likes__gt=9).order_by('-created_at')
         hotQnas = Qna.objects.none()
         for count in counts:
-            hotQnas = hotQnas | Qna.objects.filter(id=count.qna_id)
+            hotQnas = hotQnas | filterBlockedUsersSet(
+                request.user.uuid, Qna.objects.filter(id=count.qna_id))
         resultQnas = hotQnas.filter(
             Q(content__icontains=text) | Q(title__icontains=text))
         for qna in resultQnas:
             data.append(buildQnaPreview(qna))
     elif category == 6:
-        qnas = Qna.objects.filter(
-            Q(solved=False) | Q(content__icontains=text) | Q(title__icontains=text)).order_by('-created_at')
+        qnas = filterBlockedUsersSet(request.user.uuid, Qna.objects.filter(
+            Q(solved=False) | Q(content__icontains=text) | Q(title__icontains=text)).order_by('-created_at'))
         for qna in qnas:
             data.append(buildQnaPreview(qna))
     elif category == 7:
-        qnas = Qna.objects.filter(
-            Q(solved=True) | Q(content__icontains=text) | Q(title__icontains=text)).order_by('-created_at')
+        qnas = filterBlockedUsersSet(request.user.uuid, Qna.objects.filter(
+            Q(solved=True) | Q(content__icontains=text) | Q(title__icontains=text)).order_by('-created_at'))
         for qna in qnas:
             data.append(buildQnaPreview(qna))
 
@@ -120,13 +140,17 @@ def getPostPreview(request):
     startIndex = int(request.GET['start_index'])
     if postType == 0:
         posts = Post.objects.order_by(
-            '-created_at')[startIndex:startIndex + indexNum]
+            '-created_at')
     else:
         posts = Post.objects.filter(type=postType).order_by(
-            '-created_at')[startIndex:startIndex + indexNum]
+            '-created_at')
+    posts = filterBlockedUsersSet(request.user.uuid, posts)[
+        startIndex:startIndex + indexNum]
     return_data = []
+
     for post in posts:
         return_data.append(buildPostPreview(post))
+
     return Response(return_data)
 
 
@@ -138,9 +162,13 @@ def getHotPostPreview(request):
     counts = PostCount.objects.filter(count_likes__gt=9).order_by(
         '-created_at')[startIndex:startIndex + indexNum]
     return_data = []
+
     for count in counts:
-        post = Post.objects.get(id=count.post_id)
-        return_data.append(buildPostPreview(post))
+        post = filterBlockedUsersObject(
+            request.user.uuid, Post.objects.get(id=count.post_id))
+        if post != None:
+            return_data.append(buildPostPreview(post))
+
     return Response(return_data)
 
 
@@ -151,8 +179,8 @@ def getQnaPreview(request):
     indexNum = int(request.GET['index_num'])
     startIndex = int(request.GET['start_index'])
 
-    qnas = Qna.objects.filter(solved=solved).order_by(
-        '-created_at')[startIndex:startIndex + indexNum]
+    qnas = filterBlockedUsersSet(request.user.uuid, Qna.objects.filter(solved=solved).order_by(
+        '-created_at'))[startIndex:startIndex + indexNum]
     return_data = []
 
     for qna in qnas:
@@ -191,31 +219,34 @@ def getHotQnaPreview(request):
         '-created_at')[startIndex:startIndex + indexNum]
     return_data = []
     for count in counts:
-        qna = Qna.objects.get(id=count.qna_id)
-        if len(qna.content) > 70:
-            qna.content = qna.content[0:70] + "..."
-        qna.created_at = timeCalculator(qna.created_at)
-        preview = {
-            "user_data": {
-                "username": User.objects.get(uuid=qna.user_id).username,
-                "activity_level": UserDetailsStatic.objects.get(user_id=qna.user_id).activity_level
-            },
-            "qna_data": QnaPreviewSerializer(qna).data,
-            "count": QnaCountMiniSerializer(QnaCount.objects.get(qna_id=qna.id)).data
-        }
-
-        if qna.solved:
-            answers = QnaAnswer.objects.filter(qna_id=qna.id)
-            for answer in answers:
-                if answer.selected_type in (1, 3):
-                    selectedUserId = answer.user_id
-
-            preview['selected_user_data'] = {
-                "username": User.objects.get(uuid=selectedUserId).username,
-                "activity_level": UserDetailsStatic.objects.get(user_id=selectedUserId).activity_level
+        qna = filterBlockedUsersObject(
+            request.user.uuid, Qna.objects.get(id=count.qna_id))
+        if qna != None:
+            if len(qna.content) > 70:
+                qna.content = qna.content[0:70] + "..."
+            qna.created_at = timeCalculator(qna.created_at)
+            preview = {
+                "user_data": {
+                    "username": User.objects.get(uuid=qna.user_id).username,
+                    "activity_level": UserDetailsStatic.objects.get(user_id=qna.user_id).activity_level
+                },
+                "qna_data": QnaPreviewSerializer(qna).data,
+                "count": QnaCountMiniSerializer(QnaCount.objects.get(qna_id=qna.id)).data
             }
 
-        return_data.append(preview)
+            if qna.solved:
+                answers = QnaAnswer.objects.filter(qna_id=qna.id)
+                for answer in answers:
+                    if answer.selected_type in (1, 3):
+                        selectedUserId = answer.user_id
+
+                preview['selected_user_data'] = {
+                    "username": User.objects.get(uuid=selectedUserId).username,
+                    "activity_level": UserDetailsStatic.objects.get(user_id=selectedUserId).activity_level
+                }
+
+            return_data.append(preview)
+
     return Response(return_data)
 
 
@@ -255,12 +286,14 @@ def getUserRecentPostQna(request):
             "count": QnaCountMiniSerializer(QnaCount.objects.get(qna_id=qna.id)).data
         }
         qna_preview.append(data)
+
     total_data = {
         "post_num": Post.objects.filter(user_id=user_id).count(),
         "answer_num": QnaAnswer.objects.filter(user_id=user_id).count(),
         "post_data": post_preview,
         "qna_data": qna_preview
     }
+
     return Response(total_data)
 
 
@@ -305,9 +338,10 @@ def postComment(request):
     uuid = request.user.uuid
     if request.method == 'GET':
         post_id = request.GET['post_id']
-        comments = PostComment.objects.filter(
-            post_id=post_id).order_by('created_at')
-        replies = PostCommentReply.objects.filter(post_id=post_id)
+        comments = filterBlockedUsersSet(uuid, PostComment.objects.filter(
+            post_id=post_id).order_by('created_at'))
+        replies = filterBlockedUsersSet(
+            uuid, PostCommentReply.objects.filter(post_id=post_id))
         totalDataList = []
         for comment in comments:
             replyDataList = []
@@ -389,7 +423,8 @@ def qnaAnswer(request):
     uuid = request.user.uuid
     if request.method == 'GET':
         qna_id = request.GET['qna_id']
-        answers = QnaAnswer.objects.filter(qna_id=qna_id)
+        answers = filterBlockedUsersSet(
+            uuid, QnaAnswer.objects.filter(qna_id=qna_id))
         dataList = []
         for answer in answers:
             dataList.append({
@@ -432,8 +467,10 @@ def qnaAnswerComment(request):
     uuid = request.user.uuid
     if request.method == 'GET':
         answer_id = request.GET['answer_id']
-        comments = QnaAnswerComment.objects.filter(qna_answer_id=answer_id)
-        replies = QnaAnswerCommentReply.objects.filter(qna_answer_id=answer_id)
+        comments = filterBlockedUsersSet(
+            uuid, QnaAnswerComment.objects.filter(qna_answer_id=answer_id))
+        replies = filterBlockedUsersSet(
+            uuid, QnaAnswerCommentReply.objects.filter(qna_answer_id=answer_id))
         dataList = []
         for comment in comments:
             replyDataList = []
@@ -820,12 +857,14 @@ def updatePostCommentReplyLikeCount(request):
 @permission_classes([IsAuthenticated])
 def savedPage(request):
     uuid = request.user.uuid
-    userBookmarkedPosts = UsersBookmarkedPosts.objects.filter(user_id=uuid)
+    userBookmarkedPosts = filterBlockedUsersSet(
+        uuid, UsersBookmarkedPosts.objects.filter(user_id=uuid))
     posts = Post.objects.none()
     for userBookmarkedPost in userBookmarkedPosts:
         data = Post.objects.filter(id=userBookmarkedPost.post_id)
         posts = posts.union(data)
-    userBookmarkedQnas = UsersBookmarkedQnas.objects.filter(user_id=uuid)
+    userBookmarkedQnas = filterBlockedUsersSet(
+        uuid, UsersBookmarkedQnas.objects.filter(user_id=uuid))
     qnas = Qna.objects.none()
     for userBookmarkedQna in userBookmarkedQnas:
         data = Qna.objects.filter(id=userBookmarkedQna.qna_id)
@@ -975,7 +1014,8 @@ def savedPage(request):
 @permission_classes([IsAuthenticated])
 def bookmarkedPosts(request):
     uuid = request.user.uuid
-    bookmarks = UsersBookmarkedPosts.objects.filter(user_id=uuid)
+    bookmarks = filterBlockedUsersSet(
+        uuid, UsersBookmarkedPosts.objects.filter(user_id=uuid))
     data = []
     for bookmark in bookmarks:
         post = Post.objects.get(id=bookmark.post_id)
@@ -999,7 +1039,8 @@ def bookmarkedPosts(request):
 @permission_classes([IsAuthenticated])
 def bookmarkedQnas(request):
     uuid = request.user.uuid
-    bookmarks = UsersBookmarkedQnas.objects.filter(user_id=uuid)
+    bookmarks = filterBlockedUsersSet(
+        uuid, UsersBookmarkedQnas.objects.filter(user_id=uuid))
     data = []
     for bookmark in bookmarks:
         qna = Qna.objects.get(id=bookmark.qna_id)

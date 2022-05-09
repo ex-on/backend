@@ -32,7 +32,8 @@ class User(PermissionsMixin, AbstractBaseUser, AbstractBaseUserModel):
     ### Cognito-user related fields ###
     # some additional fields which will be filled-out only for users registered via Cognito
     phone_number = models.CharField(max_length=11, blank=True, null=True)
-
+    # reported_users = models.ManyToManyField("self", blank=True)
+    # blocked_users = models.ManyToManyField("self", blank=True)
     ### Django-user related fields ###
     # password is inherited from AbstractBaseUser
     # allow non-unique emails
@@ -53,7 +54,7 @@ class User(PermissionsMixin, AbstractBaseUser, AbstractBaseUserModel):
 
 
 class UserDetailsCount(models.Model):
-    user = models.ForeignKey(User, on_delete = CASCADE)
+    user = models.ForeignKey(User, on_delete=CASCADE)
     count_protein = models.IntegerField(default=0)
     count_liked_posts = models.IntegerField(default=0)
     count_saved_posts = models.IntegerField(default=0)
@@ -61,6 +62,7 @@ class UserDetailsCount(models.Model):
     count_uploaded_qnas = models.IntegerField(default=0)
     count_uploaded_answers = models.IntegerField(default=0)
     count_accepted_answers = models.IntegerField(default=0)
+    count_reports = models.IntegerField(default=0)
 
     class Meta:
         managed = True
@@ -68,7 +70,7 @@ class UserDetailsCount(models.Model):
 
 
 class UserDetailsStatic(models.Model):
-    user = models.ForeignKey(User, on_delete = CASCADE)
+    user = models.ForeignKey(User, on_delete=CASCADE)
     gender = models.IntegerField()
     birth_date = models.DateField()
     activity_level = models.IntegerField(default=0)
@@ -85,50 +87,59 @@ class UserDetailsStatic(models.Model):
         managed = True
         db_table = 'user_details_static'
 
+
 class UsersLikedPosts(models.Model):
-    user = models.ForeignKey(User, on_delete = CASCADE)
+    user = models.ForeignKey(User, on_delete=CASCADE)
     post = models.ForeignKey(
-        'community.Post', on_delete = CASCADE)
+        'community.Post', on_delete=CASCADE)
 
     class Meta:
         managed = True
         db_table = 'users_liked_posts'
 
+
 class UsersLikedPostComments(models.Model):
-    user = models.ForeignKey(User, on_delete = CASCADE)
-    post_comment = models.ForeignKey('community.PostComment', on_delete = CASCADE)
+    user = models.ForeignKey(User, on_delete=CASCADE)
+    post_comment = models.ForeignKey(
+        'community.PostComment', on_delete=CASCADE)
 
     class Meta:
         managed = True
         db_table = 'users_liked_post_comments'
 
+
 class UsersLikedPostCommentReplies(models.Model):
-    user = models.ForeignKey(User, on_delete = CASCADE)
-    post_comment_reply = models.ForeignKey('community.PostCommentReply', on_delete = CASCADE)
+    user = models.ForeignKey(User, on_delete=CASCADE)
+    post_comment_reply = models.ForeignKey(
+        'community.PostCommentReply', on_delete=CASCADE)
 
     class Meta:
         managed = True
         db_table = 'users_liked_post_comment_replies'
 
+
 class UsersLikedQnaAnswers(models.Model):
-    user = models.ForeignKey(User, on_delete = CASCADE)
-    qna_answer = models.ForeignKey('community.QnaAnswer', on_delete = CASCADE)
+    user = models.ForeignKey(User, on_delete=CASCADE)
+    qna_answer = models.ForeignKey('community.QnaAnswer', on_delete=CASCADE)
 
     class Meta:
         managed = True
         db_table = 'users_liked_qna_answers'
 
+
 class UsersLikedQnaAnswerComments(models.Model):
-    user = models.ForeignKey(User, on_delete = CASCADE)
-    qna_answer_comment = models.ForeignKey('community.QnaAnswerComment', on_delete = CASCADE)
+    user = models.ForeignKey(User, on_delete=CASCADE)
+    qna_answer_comment = models.ForeignKey(
+        'community.QnaAnswerComment', on_delete=CASCADE)
 
     class Meta:
         managed = True
         db_table = 'users_liked_qna_answer_comments'
 
+
 class UsersBookmarkedPosts(models.Model):
-    user = models.ForeignKey(User, on_delete = CASCADE)
-    post = models.ForeignKey('community.Post', on_delete = CASCADE)
+    user = models.ForeignKey(User, on_delete=CASCADE)
+    post = models.ForeignKey('community.Post', on_delete=CASCADE)
 
     class Meta:
         managed = True
@@ -136,9 +147,29 @@ class UsersBookmarkedPosts(models.Model):
 
 
 class UsersBookmarkedQnas(models.Model):
-    user = models.ForeignKey(User, on_delete = CASCADE)
-    qna = models.ForeignKey('community.Qna', on_delete = CASCADE)
+    user = models.ForeignKey(User, on_delete=CASCADE)
+    qna = models.ForeignKey('community.Qna', on_delete=CASCADE)
 
     class Meta:
         managed = True
         db_table = 'users_bookmarked_qnas'
+
+
+class UsersReportedUsers(models.Model):
+    user = models.ForeignKey(User, on_delete=CASCADE, related_name='subject_reported_user')
+    target_user = models.ForeignKey(
+        User, on_delete=CASCADE, related_name='target_reported_user')
+
+    class Meta:
+        managed = True
+        db_table = 'users_reported_users'
+
+
+class UsersBlockedUsers(models.Model):
+    user = models.ForeignKey(User, on_delete=CASCADE, related_name='subject_blocked_user')
+    target_user = models.ForeignKey(
+        User, on_delete=CASCADE, related_name='target_blocked_user')
+
+    class Meta:
+        managed = True
+        db_table = 'users_blocked_users'

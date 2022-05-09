@@ -440,6 +440,41 @@ def profilePrivacy(request):
         return Response(UserDetailsStatic.objects.get(user_id=uuid).profile_privacy)
 
 
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def reportUser(request):
+    uuid = request.user.uuid
+    data = json.loads(request.body)
+    targetUser = User.objects.get(username=data['username'])
+    if UsersReportedUsers.objects.filter(user_id=uuid, target_user_id=targetUser.uuid).exists():
+        return Response(status=status.HTTP_208_ALREADY_REPORTED)
+    else:
+        reportData = UsersReportedUsers(
+            user_id=uuid, target_user_id=targetUser.uuid)
+        reportData.save()
+        userCount = UserDetailsCount.objects.get(user_id=targetUser.uuid)
+        userCount.count_reports += 1
+        userCount.save()
+
+        return Response(status=status.HTTP_200_OK)
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def blockUser(request):
+    uuid = request.user.uuid
+    data = json.loads(request.body)
+    targetUser = User.objects.get(username=data['username'])
+    if UsersBlockedUsers.objects.filter(user_id=uuid, target_user_id=targetUser.uuid).exists():
+        return Response(status=status.HTTP_208_ALREADY_REPORTED)
+    else:
+        reportData = UsersBlockedUsers(
+            user_id=uuid, target_user_id=targetUser.uuid)
+        reportData.save()
+
+        return Response(status=status.HTTP_200_OK)
+
+
 @api_view(['GET'])
 @permission_classes([])
 def privacyPolicy(request):
