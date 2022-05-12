@@ -1253,7 +1253,7 @@ def deleteInstance(request):
         instance = Qna.objects.get(id=data['id'])
     elif category == 'qna_answer':
         instance = QnaAnswer.objects.get(id=data['id'])
-        count = QnaCount.objects.get(id=instance.qna_id)
+        count = QnaCount.objects.get(qna_id=instance.qna_id)
         count.count_answers -= 1
         count.save()
     elif category == 'qna_answer_comment':
