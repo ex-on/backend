@@ -71,8 +71,8 @@ class UserDetailsCount(models.Model):
 
 class UserDetailsStatic(models.Model):
     user = models.ForeignKey(User, on_delete=CASCADE)
-    gender = models.IntegerField()
-    birth_date = models.DateField()
+    gender = models.IntegerField(null=True)
+    birth_date = models.DateField(null=True)
     activity_level = models.IntegerField(default=0)
     physical_level = models.IntegerField(blank=True, null=True)
     height = models.FloatField(null=True)
