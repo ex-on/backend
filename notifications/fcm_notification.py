@@ -51,9 +51,11 @@ def send_fcm(uuid, title, body, data=None):
             ),
             token=registration_token,
         )
-
-        response = messaging.send(message)
-        print('Successfully sent message:', response)
+        try: 
+            response = messaging.send(message)
+            print('Successfully sent message:', response)
+        except:
+            print('Failed to send message')
 
 
 def exercise_attendance_fcm(uuid):
