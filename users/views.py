@@ -42,10 +42,9 @@ def checkAvailableUsername(request):
 def checkUserInfo(request):
     uuid = request.user.uuid
     user = User.objects.get(uuid=uuid)
-    if (UserDetailsStatic.objects.filter(user_id=uuid).exists()):
+    if (UserDetailsStatic.objects.filter(user_id=uuid).exists()) and (PhysicalDataRecord.objects.filter(user_id=uuid).exists()):
         userDetailsStatic = UserDetailsStatic.objects.get(user_id=uuid)
-        userInfoExists = (user.username is not None) and (
-            userDetailsStatic.birth_date is not None) and (userDetailsStatic.gender is not None)
+        userInfoExists = (user.username != None) and (userDetailsStatic.height != None)
     else:
         userInfoExists = False
     return Response(userInfoExists)
@@ -77,7 +76,8 @@ def registerCognitoUserInfo(request):
     uuid = request.user.uuid
     data = json.loads(request.body)
     auth_provider = data['auth_provider']
-    birth_date = datetime.datetime.strptime(data['birth_date'], '%Y-%m-%d') if data['birth_date'] != None else None
+    birth_date = datetime.datetime.strptime(
+        data['birth_date'], '%Y-%m-%d') if data['birth_date'] != None else None
     gender = data['gender']
     username = data['username']
     user = User.objects.get(uuid=uuid)
