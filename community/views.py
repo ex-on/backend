@@ -687,17 +687,19 @@ def updatePostLikeCount(request):
     data = json.loads(request.body)
     postCount = PostCount.objects.get(post_id=data['post_id'])
     if data['add'] == True:
-        postCount.count_likes += 1
-        usersLikedPosts = UsersLikedPosts(
-            user_id=uuid, post_id=data['post_id'])
-        postCount.save()
-        usersLikedPosts.save()
-        if postCount.count_likes == 10:
-            hotPost = Post.objects.get(id=postCount.post_id)
-            if not hotPost.hot:
-                hotPost.hot = True
-                hotPost.save()
-                hot_post_fcm(hotPost.user_id, hotPost.id)
+        if not UsersLikedPosts.objects.filter(
+            user_id=uuid, post_id=data['post_id']).exists():
+            postCount.count_likes += 1
+            usersLikedPosts = UsersLikedPosts(
+                user_id=uuid, post_id=data['post_id'])
+            postCount.save()
+            usersLikedPosts.save()
+            if postCount.count_likes == 10:
+                hotPost = Post.objects.get(id=postCount.post_id)
+                if not hotPost.hot:
+                    hotPost.hot = True
+                    hotPost.save()
+                    hot_post_fcm(hotPost.user_id, hotPost.id)
 
     else:
         postCount.count_likes -= 1
@@ -715,11 +717,13 @@ def updatePostSavedCount(request):
     data = json.loads(request.body)
     postCount = PostCount.objects.get(post_id=data['post_id'])
     if data['add'] == True:
-        postCount.count_saved += 1
-        usersSavedPosts = UsersBookmarkedPosts(
-            user_id=uuid, post_id=data['post_id'])
-        postCount.save()
-        usersSavedPosts.save()
+        if not UsersBookmarkedPosts.objects.get(
+            user_id=uuid, post_id=data['post_id']).exists():
+            postCount.count_saved += 1
+            usersSavedPosts = UsersBookmarkedPosts(
+                user_id=uuid, post_id=data['post_id'])
+            postCount.save()
+            usersSavedPosts.save()
     else:
         postCount.count_saved -= 1
         usersSavedPosts = UsersBookmarkedPosts.objects.get(
@@ -736,11 +740,13 @@ def updateQnaSavedCount(request):
     data = json.loads(request.body)
     qnaCount = QnaCount.objects.get(qna_id=data['qna_id'])
     if data['add'] == True:
-        qnaCount.count_saved += 1
-        usersSavedQnas = UsersBookmarkedQnas(
-            user_id=uuid, qna_id=data['qna_id'])
-        qnaCount.save()
-        usersSavedQnas.save()
+        if not UsersBookmarkedQnas.objects.get(
+            user_id=uuid, qna_id=data['qna_id']).exists():
+            qnaCount.count_saved += 1
+            usersSavedQnas = UsersBookmarkedQnas(
+                user_id=uuid, qna_id=data['qna_id'])
+            qnaCount.save()
+            usersSavedQnas.save()
     else:
         qnaCount.count_saved -= 1
         usersSavedQnas = UsersBookmarkedQnas.objects.get(
@@ -761,20 +767,22 @@ def updateQnaAnswerLikeCount(request):
     qnaCount = QnaCount.objects.get(qna_id=qnaAnswer.qna_id)
 
     if data['add'] == True:
-        qnaAnswerCount.count_likes += 1
-        qnaCount.count_likes += 1
-        usersLikedQnaAnswers = UsersLikedQnaAnswers(
-            user_id=uuid, qna_answer_id=data['qna_answer_id'])
-        qnaAnswerCount.save()
-        qnaCount.save()
-        usersLikedQnaAnswers.save()
+        if not UsersLikedQnaAnswers.objects.filter(
+            user_id=uuid, qna_answer_id=data['qna_answer_id']).exists():
+            qnaAnswerCount.count_likes += 1
+            qnaCount.count_likes += 1
+            usersLikedQnaAnswers = UsersLikedQnaAnswers(
+                user_id=uuid, qna_answer_id=data['qna_answer_id'])
+            qnaAnswerCount.save()
+            qnaCount.save()
+            usersLikedQnaAnswers.save()
 
-        if qnaCount.count_likes == 10:
-            hotQna = Qna.objects.get(id=qnaCount.qna_id)
-            if not hotQna.hot:
-                hotQna.hot = True
-                hotQna.save()
-                hot_qna_fcm(hotQna.user_id, hotQna.id)
+            if qnaCount.count_likes == 10:
+                hotQna = Qna.objects.get(id=qnaCount.qna_id)
+                if not hotQna.hot:
+                    hotQna.hot = True
+                    hotQna.save()
+                    hot_qna_fcm(hotQna.user_id, hotQna.id)
     else:
         qnaAnswerCount.count_likes -= 1
         qnaCount.count_likes -= 1
@@ -795,11 +803,13 @@ def updatePostCommentLikeCount(request):
     postCommentCount = PostCommentCount.objects.get(
         post_comment_id=data['post_comment_id'])
     if data['add'] == True:
-        postCommentCount.count_likes += 1
-        usersLikedPostComments = UsersLikedPostComments(
-            user_id=uuid, post_comment_id=data['post_comment_id'])
-        postCommentCount.save()
-        usersLikedPostComments.save()
+        if not UsersLikedPostComments.objects.filter(
+            user_id=uuid, post_comment_id=data['post_comment_id']).exists():
+            postCommentCount.count_likes += 1
+            usersLikedPostComments = UsersLikedPostComments(
+                user_id=uuid, post_comment_id=data['post_comment_id'])
+            postCommentCount.save()
+            usersLikedPostComments.save()
     else:
         postCommentCount.count_likes -= 1
         usersLikedPostComments = UsersLikedPostComments.objects.filter(
@@ -817,11 +827,13 @@ def updateQnaAnswerCommentLikeCount(request):
     qnaAnswerCommentCount = QnaAnswerCommentCount.objects.get(
         qna_answer_comment_id=data['qna_answer_comment_id'])
     if data['add'] == True:
-        qnaAnswerCommentCount.count_likes += 1
-        usersLikedQnaAnswerComments = UsersLikedQnaAnswerComments(
-            user_id=uuid, qna_answer_comment_id=data['qna_answer_comment_id'])
-        qnaAnswerCommentCount.save()
-        usersLikedQnaAnswerComments.save()
+        if not UsersLikedQnaAnswerComments.objects.filter(
+            user_id=uuid, qna_answer_comment_id=data['qna_answer_comment_id']).exists():
+            qnaAnswerCommentCount.count_likes += 1
+            usersLikedQnaAnswerComments = UsersLikedQnaAnswerComments(
+                user_id=uuid, qna_answer_comment_id=data['qna_answer_comment_id'])
+            qnaAnswerCommentCount.save()
+            usersLikedQnaAnswerComments.save()
     else:
         qnaAnswerCommentCount.count_likes -= 1
         usersLikedQnaAnswerComments = UsersLikedQnaAnswerComments.objects.filter(
@@ -839,11 +851,13 @@ def updatePostCommentReplyLikeCount(request):
     postCommentReplyCount = PostCommentReplyCount.objects.get(
         post_comment_reply_id=data['post_comment_reply_id'])
     if data['add'] == True:
-        postCommentReplyCount.count_likes += 1
-        usersLikedPostCommentReplies = UsersLikedPostCommentReplies(
-            user_id=uuid, post_comment_reply_id=data['post_comment_reply_id'])
-        postCommentReplyCount.save()
-        usersLikedPostCommentReplies.save()
+        if not UsersLikedPostCommentReplies.objects.filter(
+            user_id=uuid, post_comment_reply_id=data['post_comment_reply_id']).exists():
+            postCommentReplyCount.count_likes += 1
+            usersLikedPostCommentReplies = UsersLikedPostCommentReplies(
+                user_id=uuid, post_comment_reply_id=data['post_comment_reply_id'])
+            postCommentReplyCount.save()
+            usersLikedPostCommentReplies.save()
     else:
         postCommentReplyCount.count_likes -= 1
         usersLikedPostCommentReplies = UsersLikedPostCommentReplies.objects.filter(
