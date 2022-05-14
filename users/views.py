@@ -77,7 +77,7 @@ def registerCognitoUserInfo(request):
     uuid = request.user.uuid
     data = json.loads(request.body)
     auth_provider = data['auth_provider']
-    birth_date = datetime.datetime.strptime(data['birth_date'], '%Y-%m-%d')
+    birth_date = datetime.datetime.strptime(data['birth_date'], '%Y-%m-%d') if data['birth_date'] != None else None
     gender = data['gender']
     username = data['username']
     user = User.objects.get(uuid=uuid)
