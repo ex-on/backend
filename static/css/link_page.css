@@ -1,0 +1,85 @@
+@import url('https://fonts.googleapis.com/css2?family=Roboto&display=swap');
+
+body {
+  background-color: #00b9e4;
+  margin: 0 auto;
+  max-width: 700px;
+  /* min-width: none; */
+  text-align: center;
+}
+
+.logo {
+  display: block;
+  max-width: 150px;
+  max-height: 150px;
+  margin-left: auto;
+  margin-right: auto;
+  margin-top: max(130px, 15.5%);
+  margin-bottom: max(55px, 8%);
+}
+
+h2 {
+  font-size: 20px;
+  font-weight: bold;
+  font-family: 'Roboto', sans-serif;
+  color: white;
+}
+
+h3 {
+  font-size: 18px;
+  font-weight: 400;
+  font-family: 'Roboto', sans-serif;
+  color: white;
+  margin-bottom: max(50px, 6.5%);
+}
+
+.linkButton {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: white;
+  border-radius: 100px;
+  width: 300px;
+  max-height: 50px;
+  margin: 16px auto;
+  border: 0;
+  overflow: hidden;
+  transition: background 400ms;
+  cursor: pointer;
+}
+
+.labelIcon {
+ max-width: 20px; 
+ max-height: 20px;
+ color: #00b9e4;
+ vertical-align: middle;
+ margin-left: 20px;
+}
+
+.left, .right {
+  flex: 1;
+  display: flex;
+  justify-content: flex-start;
+}
+
+p {
+  font-size: 16px;
+  font-weight: 400;
+  font-family: 'Roboto', sans-serif;
+}
+
+span.ripple {
+  position: absolute;
+  border-radius: 50%;
+  transform: scale(0);
+  animation: ripple 600ms linear;
+  background-color: #00b9e4;
+}
+
+@keyframes ripple {
+  to {
+    transform: scale(4);
+    opacity: 0;
+  }
+}

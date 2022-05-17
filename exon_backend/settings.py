@@ -54,13 +54,13 @@ COGNITO_POOL_DOMAIN = get_secret("COGNITO_POOL_DOMAIN")
 COGNITO_AUDIENCE = None
 # will be set few lines of code later, if configuration provided
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
+DEBUG = True
 
 ALLOWED_HOSTS = [
     '3.34.98.99',
     '.exonverse.com',
     '.ap-northeast-2.compute.amazonaws.com',
-    # '*',
+    '*',
 ]
 
 rsa_keys = {}
@@ -224,7 +224,10 @@ USE_TZ = False
 # https://docs.djangoproject.com/en/3.2/howto/static-files/
 
 STATIC_URL = '/static/'
-STATIC_ROOT = os.path.join(BASE_DIR, 'static')
+# STATIC_ROOT = os.path.join(BASE_DIR, 'static')
+STATICFILES_DIRS = (
+    os.path.join(BASE_DIR, "static"),
+)
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/3.2/ref/settings/#default-auto-field
